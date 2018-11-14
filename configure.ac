@@ -1,0 +1,9 @@
+AC_INIT([rainbowpath], [0.1], [samuel.lauren@iki.fi])
+AM_INIT_AUTOMAKE([foreign])
+AC_LANG([C])
+AC_PROG_CC
+AC_PROG_CC_C99
+AC_HEADER_STDBOOL
+AC_TYPE_UINT8_T
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
