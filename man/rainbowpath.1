@@ -1,0 +1,40 @@
+.TH RAINBOWPATH 1 2018
+
+.SH NAME
+
+rainbowpath \- Color path components using a palette.
+
+.SH SYNOPSIS
+
+.B rainbowpath
+[\fB\-p\fR \fIPALETTE\fR] [\fB\-s\fR \fICOLOR\fR] [\fB\-n\fR] [\fB\-b\fR] [\fB\-h\fR] [\fB\-v\fR] [\fIPATH\fR]
+
+.SH OPTIONS
+
+.TP
+.BI \-p " PALETTE"
+Comma-separated list of colors for path components. Colors are represented as
+numbers between 0 and 255.
+
+.TP
+.BI \-s " COLOR"
+Color for path separators.
+
+.TP
+.BI \-n
+Do not append newline.
+
+.TP
+.BI \-b
+Escape color codes for use in Bash prompts.
+
+.TP
+.BI \-h
+Display help.
+
+.TP
+.BI \-v
+Display version information.
+
+.SH AUTHORS
+Samuel Laurén <samuel.lauren@iki.fi>
