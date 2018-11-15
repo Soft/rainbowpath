@@ -14,6 +14,17 @@ static const uint8_t PALETTE[] =
 static const size_t INITIAL_BUFFER_SIZE = 32;
 static const size_t INITIAL_PATH_SIZE = 512;
 
+static const char *USAGE =
+  "Usage: rainbowpath [-p PALETTE] [-s COLOR] [-n] [-b] [-h] [PATH]\n"
+  "Color path components using a palette.\n\n"
+  "Options:\n"
+  "  -p PALETTE  Comma-separated list of colors for path components\n"
+  "              Colors are represented as numbers between 0 and 255\n"
+  "  -s COLOR    Color for path separators\n"
+  "  -n          Do not append newline\n"
+  "  -b          Escape color codes for use in Bash prompts\n"
+  "  -h          Display this help\n";
+
 static inline void *check(void *ptr) {
   if (!ptr) {
     fputs("Failed to allocate memory\n", stderr);
@@ -99,8 +110,8 @@ static size_t parse_palette(const char *input,
   return pos;
 }
 
-static void usage() {
-  fputs("Invalid usage: rainbowpath [-p PALETTE] [-s COLOR] [-n] [-b] [-h] [PATH]\n", stderr);
+static inline void usage() {
+  fputs(USAGE, stderr);
 }
 
 int main(int argc, char *argv[]) {
