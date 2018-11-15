@@ -8,7 +8,7 @@ jobs:
         - sudo apt-get install -y musl-tools
       script:
         - ./autogen.sh
-        - CC=musl-gcc CFLAGS=-static ./configure
+        - CC=musl-gcc CFLAGS="-static -O2" ./configure
         - make
         - strip rainbowpath
       deploy:

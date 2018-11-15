@@ -17,7 +17,7 @@ make
 ### Usage
 
 ```
-Usage: rainbowpath [-p PALETTE] [-s COLOR] [-n] [-b] [-h] [PATH]
+Usage: rainbowpath [-p PALETTE] [-s COLOR] [-n] [-b] [-h] [-v] [PATH]
 Color path components using a palette.
 
 Options:
@@ -27,4 +27,5 @@ Options:
   -n          Do not append newline
   -b          Escape color codes for use in Bash prompts
   -h          Display this help
+  -v          Display version information
 ```

@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -15,7 +17,7 @@ static const size_t INITIAL_BUFFER_SIZE = 32;
 static const size_t INITIAL_PATH_SIZE = 512;
 
 static const char *USAGE =
-  "Usage: rainbowpath [-p PALETTE] [-s COLOR] [-n] [-b] [-h] [PATH]\n"
+  "Usage: rainbowpath [-p PALETTE] [-s COLOR] [-n] [-b] [-h] [-v] [PATH]\n"
   "Color path components using a palette.\n\n"
   "Options:\n"
   "  -p PALETTE  Comma-separated list of colors for path components\n"
@@ -23,7 +25,8 @@ static const char *USAGE =
   "  -s COLOR    Color for path separators\n"
   "  -n          Do not append newline\n"
   "  -b          Escape color codes for use in Bash prompts\n"
-  "  -h          Display this help\n";
+  "  -h          Display this help\n"
+  "  -v          Display version information\n";
 
 static inline void *check(void *ptr) {
   if (!ptr) {
@@ -110,8 +113,12 @@ static size_t parse_palette(const char *input,
   return pos;
 }
 
-static inline void usage() {
+static inline void usage(void) {
   fputs(USAGE, stderr);
+}
+
+static inline void version(void) {
+  fputs(PACKAGE_STRING "\n", stderr);
 }
 
 int main(int argc, char *argv[]) {
@@ -122,7 +129,7 @@ int main(int argc, char *argv[]) {
   char *path = NULL;
   uint8_t *palette = NULL;
 
-  while ((arg = getopt(argc, argv, "p:s:nbh")) != -1) {
+  while ((arg = getopt(argc, argv, "p:s:nbhv")) != -1) {
     switch (arg) {
     case 'p':
       if ((palette_size = parse_palette(optarg, &palette)) == 0) {
@@ -146,7 +153,9 @@ int main(int argc, char *argv[]) {
       break;
     case 'h':
       usage();
-      ret = EXIT_FAILURE;
+      goto out;
+    case 'v':
+      version();
       goto out;
     default:
       usage();
