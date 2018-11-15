@@ -5,6 +5,7 @@
 #include <inttypes.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 
 static const char PATH_SEP = '/';
 static const uint8_t PATH_SEP_COLOR = 239;
@@ -12,9 +13,34 @@ static const uint8_t PALETTE[] =
   { 21, 56, 89, 160, 202, 205, 201, 165, 135, 69 };
 static const char *RESET = "\e[0m";
 static const size_t INITIAL_BUFFER_SIZE = 32;
+static const size_t INITIAL_PATH_SIZE = 512;
+
+static inline void *check(void *ptr) {
+  if (!ptr) {
+    fputs("Failed to allocate memory\n", stderr);
+    abort();
+  }
+  return ptr;
+}
 
 static inline void begin_color(uint8_t color) {
   printf("\e[38;5;%" PRIu8 "m", color);
+}
+
+static char *get_working_directory(void) {
+  size_t buffer_size = INITIAL_PATH_SIZE;
+  char *buffer = check(malloc(buffer_size));
+  while (true) {
+    if ((buffer = getcwd(buffer, buffer_size))) {
+      return buffer;
+    } else if (errno == ERANGE) {
+      buffer_size *= 2;
+      buffer = check(realloc(buffer, buffer_size));
+    } else {
+      free(buffer);
+      return NULL;
+    }
+  }
 }
 
 static void print_path(const char *path,
@@ -30,7 +56,7 @@ static void print_path(const char *path,
         ind++;
     }
     begin_color(sep_color);
-    fputs("/", stdout);
+    fputc('/', stdout);
     rest = ptr + 1;
   }
   begin_color(palette[ind % palette_size]);
@@ -40,14 +66,14 @@ static void print_path(const char *path,
 
 static size_t parse_palette(const char *input,
                             const uint8_t **palette) {
-  char *tmp = strdup(input), *cur, *state;
+  char *tmp = check(strdup(input)), *cur, *state;
   size_t pos = 0, buf_size = INITIAL_BUFFER_SIZE;
   uint8_t color;
-  uint8_t *result = malloc(sizeof(uint8_t) * buf_size);
+  uint8_t *result = check(malloc(sizeof(uint8_t) * buf_size));
   for (cur = strtok_r(tmp, ",", &state); cur; cur = strtok_r(NULL, ",", &state)) {
     if (pos >= buf_size) {
       buf_size *= 2;
-      result = realloc(result, sizeof(uint8_t) * buf_size);
+      result = check(realloc(result, sizeof(uint8_t) * buf_size));
     }
     if (sscanf(cur, "%" SCNu8, &color) == 1) {
       *(result + pos) = color;
@@ -64,15 +90,16 @@ static size_t parse_palette(const char *input,
 }
 
 static void usage() {
-  fputs("Invalid usage: rainbowpath [-p PALETTE] [-s COLOR] [-n] [-h] PATH\n", stderr);
+  fputs("Invalid usage: rainbowpath [-p PALETTE] [-s COLOR] [-n] [-h] [PATH]\n", stderr);
 }
 
 int main(int argc, char *argv[]) {
-  char arg;
+  int arg;
   bool new_line = true;
   size_t palette_size = sizeof(PALETTE) / sizeof(uint8_t);
   const uint8_t *palette = PALETTE;
   uint8_t path_sep = PATH_SEP_COLOR;
+  const char *path;
   while ((arg = getopt(argc, argv, "p:s:nh")) != -1) {
     switch (arg) {
     case 'p':
@@ -99,12 +126,19 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if (optind != argc - 1) {
+  if (optind == argc - 1) {
+    path = argv[optind];
+  } else if (optind == argc) {
+    if ((path = get_working_directory()) == NULL) {
+      fputs("Failed to get working directory\n", stderr);
+      return EXIT_FAILURE;
+    }
+  } else {
     usage();
     return EXIT_FAILURE;
   }
 
-  print_path(argv[optind], path_sep, palette, palette_size);
+  print_path(path, path_sep, palette, palette_size);
   if (new_line) {
     fputc('\n', stdout);
   }

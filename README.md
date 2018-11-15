@@ -13,5 +13,5 @@ make
 ### Usage
 
 ```shell
-rainbowpath [-p PALETTE] [-s COLOR] [-n] [-h] PATH
+rainbowpath [-p PALETTE] [-s COLOR] [-n] [-h] [PATH]
 ```

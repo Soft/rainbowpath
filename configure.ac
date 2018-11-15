@@ -1,5 +1,5 @@
 AC_INIT([rainbowpath], [0.1], [samuel.lauren@iki.fi])
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([-Wall foreign])
 AC_LANG([C])
 AC_PROG_CC
 AC_PROG_CC_C99
