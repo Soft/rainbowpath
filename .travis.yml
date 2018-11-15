@@ -10,7 +10,6 @@ jobs:
         - ./autogen.sh
         - CC=musl-gcc ./configure
         - make
-        - strip rainbowpath
       deploy:
         provider: releases
         api_key: $GITHUB_OAUTH_TOKEN
