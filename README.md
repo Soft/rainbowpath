@@ -12,7 +12,7 @@ make
 
 ### Usage
 
-```shell
+```
 Usage: rainbowpath [-p PALETTE] [-s COLOR] [-n] [-b] [-h] [PATH]
 Color path components using a palette.
 
