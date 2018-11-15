@@ -86,7 +86,7 @@ static void print_path(const char *path,
 }
 
 static size_t parse_palette(const char *input,
-                            const uint8_t **palette) {
+                            uint8_t **palette) {
   char *tmp = check(strdup(input)), *cur, *state;
   size_t pos = 0, buf_size = INITIAL_BUFFER_SIZE;
   uint8_t color;
@@ -115,25 +115,27 @@ static inline void usage() {
 }
 
 int main(int argc, char *argv[]) {
-  int arg;
+  int arg, ret = EXIT_SUCCESS;
   bool new_line = true, bash_escape = false;
   size_t palette_size = sizeof(PALETTE) / sizeof(uint8_t);
-  const uint8_t *palette = PALETTE;
   uint8_t path_sep = PATH_SEP_COLOR;
-  const char *path;
+  char *path = NULL;
+  uint8_t *palette = NULL;
 
   while ((arg = getopt(argc, argv, "p:s:nbh")) != -1) {
     switch (arg) {
     case 'p':
       if ((palette_size = parse_palette(optarg, &palette)) == 0) {
         fputs("Invalid palette\n", stderr);
-        return EXIT_FAILURE;
+        ret = EXIT_FAILURE;
+        goto out;
       }
       break;
     case 's':
       if (sscanf(optarg, "%" SCNu8, &path_sep) != 1) {
         fputs("Invalid color\n", stderr);
-        return EXIT_FAILURE;
+        ret = EXIT_FAILURE;
+        goto out;
       }
       break;
     case 'n':
@@ -144,32 +146,45 @@ int main(int argc, char *argv[]) {
       break;
     case 'h':
       usage();
-      return EXIT_SUCCESS;
+      ret = EXIT_FAILURE;
+      goto out;
     default:
       usage();
-      return EXIT_FAILURE;
+      ret = EXIT_FAILURE;
+      goto out;
     }
   }
 
-  if (optind == argc - 1) {
-    path = argv[optind];
-  } else if (optind == argc) {
+  if (optind == argc) {
     if ((path = get_working_directory()) == NULL) {
       fputs("Failed to get working directory\n", stderr);
-      return EXIT_FAILURE;
+      ret = EXIT_FAILURE;
+      goto out;
     }
-  } else {
+  } else if (optind > argc) {
     usage();
-    return EXIT_FAILURE;
+    ret = EXIT_FAILURE;
+    goto out;
   }
 
-  print_path(path, path_sep, palette, palette_size, bash_escape);
+  print_path(path ? path : argv[optind],
+             path_sep,
+             palette ? palette : PALETTE,
+             palette_size,
+             bash_escape);
 
   if (new_line) {
     fputc('\n', stdout);
   }
 
-  return EXIT_SUCCESS;
+ out:
+  if (palette) {
+    free(palette);
+  }
+  if (path) {
+    free(path);
+  }
+  return ret;
 }
 
 
