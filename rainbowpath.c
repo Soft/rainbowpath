@@ -12,12 +12,12 @@
 static const char PATH_SEP = '/';
 static const uint8_t PATH_SEP_COLOR = 239;
 static const uint8_t PALETTE[] =
-  { 21, 56, 89, 160, 202, 205, 201, 165, 135, 69 };
+  { 160, 208, 220, 82, 39, 63 };
 static const size_t INITIAL_BUFFER_SIZE = 32;
 static const size_t INITIAL_PATH_SIZE = 512;
 
 static const char *USAGE =
-  "Usage: rainbowpath [-p PALETTE] [-s COLOR] [-n] [-b] [-h] [-v] [PATH]\n"
+  "Usage: " PACKAGE_NAME " [-p PALETTE] [-s COLOR] [-n] [-b] [-h] [-v] [PATH]\n"
   "Color path components using a palette.\n\n"
   "Options:\n"
   "  -p PALETTE  Comma-separated list of colors for path components\n"
