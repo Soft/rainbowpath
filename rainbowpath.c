@@ -11,7 +11,6 @@ static const char PATH_SEP = '/';
 static const uint8_t PATH_SEP_COLOR = 239;
 static const uint8_t PALETTE[] =
   { 21, 56, 89, 160, 202, 205, 201, 165, 135, 69 };
-static const char *RESET = "\e[0m";
 static const size_t INITIAL_BUFFER_SIZE = 32;
 static const size_t INITIAL_PATH_SIZE = 512;
 
@@ -23,8 +22,18 @@ static inline void *check(void *ptr) {
   return ptr;
 }
 
-static inline void begin_color(uint8_t color) {
-  printf("\e[38;5;%" PRIu8 "m", color);
+static inline void begin_color(uint8_t color,
+                               bool bash_escape) {
+  printf("%s\e[38;5;%" PRIu8 "m%s",
+         bash_escape ? "\\[" : "",
+         color,
+         bash_escape ? "\\]" : "");
+}
+
+static inline void end_color(bool bash_escape) {
+  printf("%s\e[0m%s",
+         bash_escape ? "\\[" : "",
+         bash_escape ? "\\]" : "");
 }
 
 static char *get_working_directory(void) {
@@ -46,22 +55,23 @@ static char *get_working_directory(void) {
 static void print_path(const char *path,
                        const uint8_t sep_color,
                        const uint8_t palette[],
-                       const size_t palette_size) {
+                       const size_t palette_size,
+                       bool bash_escape) {
   const char *rest = path, *ptr;
   size_t ind = 0;
   while ((ptr = strchr(rest, PATH_SEP))) {
     if (ptr != rest) {
-        begin_color(palette[ind % palette_size]);
-        fwrite(rest, 1, ptr - rest, stdout);
-        ind++;
+      begin_color(palette[ind % palette_size], bash_escape);
+      fwrite(rest, 1, ptr - rest, stdout);
+      ind++;
     }
-    begin_color(sep_color);
-    fputc('/', stdout);
+    begin_color(sep_color, bash_escape);
+    fputc(PATH_SEP, stdout);
     rest = ptr + 1;
   }
-  begin_color(palette[ind % palette_size]);
+  begin_color(palette[ind % palette_size], bash_escape);
   fputs(rest, stdout);
-  fputs(RESET, stdout);
+  end_color(bash_escape);
 }
 
 static size_t parse_palette(const char *input,
@@ -90,17 +100,18 @@ static size_t parse_palette(const char *input,
 }
 
 static void usage() {
-  fputs("Invalid usage: rainbowpath [-p PALETTE] [-s COLOR] [-n] [-h] [PATH]\n", stderr);
+  fputs("Invalid usage: rainbowpath [-p PALETTE] [-s COLOR] [-n] [-b] [-h] [PATH]\n", stderr);
 }
 
 int main(int argc, char *argv[]) {
   int arg;
-  bool new_line = true;
+  bool new_line = true, bash_escape = false;
   size_t palette_size = sizeof(PALETTE) / sizeof(uint8_t);
   const uint8_t *palette = PALETTE;
   uint8_t path_sep = PATH_SEP_COLOR;
   const char *path;
-  while ((arg = getopt(argc, argv, "p:s:nh")) != -1) {
+
+  while ((arg = getopt(argc, argv, "p:s:nbh")) != -1) {
     switch (arg) {
     case 'p':
       if ((palette_size = parse_palette(optarg, &palette)) == 0) {
@@ -116,6 +127,9 @@ int main(int argc, char *argv[]) {
       break;
     case 'n':
       new_line = false;
+      break;
+    case 'b':
+      bash_escape = true;
       break;
     case 'h':
       usage();
@@ -138,7 +152,8 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  print_path(path, path_sep, palette, palette_size);
+  print_path(path, path_sep, palette, palette_size, bash_escape);
+
   if (new_line) {
     fputc('\n', stdout);
   }
