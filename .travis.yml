@@ -7,10 +7,10 @@ jobs:
         - sudo apt-get update
         - sudo apt-get install -y musl-tools
       script:
-        ./autogen.sh
-        CC=musl-gcc ./configure
-        make
-        strip rainbowpath
+        - ./autogen.sh
+        - CC=musl-gcc ./configure
+        - make
+        - strip rainbowpath
       deploy:
         provider: releases
         api_key: $GITHUB_OAUTH_TOKEN
