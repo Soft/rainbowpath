@@ -4,7 +4,17 @@
 [![GitHub release](https://img.shields.io/github/release/Soft/rainbowpath.svg)](https://github.com/Soft/rainbowpath/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Program for making paths pretty.
+`rainbowpath is a program for making paths pretty. It can be used to make pretty
+shell prompts:
+
+<img src="https://raw.githubusercontent.com/Soft/rainbowpath/master/extra/screenshot.png">
+
+`rainbowpath` formats supplied path by coloring each path component with a color
+selected from a palette. Colors for path components are selected based on the
+order they appear in the palette. If no palette is supplied a default one will
+be used. `rainbowpath` should work on any modern terminal emulator that supports
+256 colors. When invoked without a path `rainbowpath` displays the current
+working directory.
 
 ### Building
 
