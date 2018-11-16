@@ -4,7 +4,7 @@
 [![GitHub release](https://img.shields.io/github/release/Soft/rainbowpath.svg)](https://github.com/Soft/rainbowpath/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-`rainbowpath is a program for making paths pretty. It can be used to make pretty
+`rainbowpath` is a program for making paths pretty. It can be used to make pretty
 shell prompts:
 
 <img src="https://raw.githubusercontent.com/Soft/rainbowpath/master/extra/screenshot.png">
@@ -15,6 +15,12 @@ order they appear in the palette. If no palette is supplied a default one will
 be used. `rainbowpath` should work on any modern terminal emulator that supports
 256 colors. When invoked without a path `rainbowpath` displays the current
 working directory.
+
+### Installation
+
+Statically linked release binaries are available on GitHub [releases
+page](https://github.com/Soft/rainbowpath/releases). These should work on most
+modern Linux systems.
 
 ### Building
 
@@ -39,3 +45,24 @@ Options:
   -h          Display this help
   -v          Display version information
 ```
+
+### Example: Using in a Bash prompt
+
+In Bash, what appears in the shell prompt can be controlled using the `PS1`
+variable. In addition, `PROMPT_COMMAND` variable can be used to execute commands
+before the prompt is displayed. This mechanism can be used to dynamically modify
+the prompt using external commands. For example, to include `rainbowpath` output
+into the shell prompt, we could define the following function:
+
+```shell
+function reset-prompt {
+  PS1="\u@\h $(rainbowpath -b) \$ "
+}
+
+PROMPT_COMMAND=reset-prompt
+```
+
+With this setup, `rainbowpath` will be executed every time prompt is about to be
+displayed and the output included into the prompt string.
+
+

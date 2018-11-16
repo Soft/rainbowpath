@@ -2,6 +2,12 @@ language: c
 sudo: required
 jobs:
   include:
+    - stage: test
+      script:
+        - ./autogen.sh
+        - ./configure
+        - make
+        - ./rainbowpath
     - stage: binary
       before_install:
         - sudo apt-get update
@@ -16,3 +22,5 @@ jobs:
         api_key: $GITHUB_OAUTH_TOKEN
         file: rainbowpath
         skip_cleanup: true
+        on:
+          tags: true
