@@ -2,6 +2,7 @@
 
 [![Build Status](https://api.travis-ci.org/Soft/rainbowpath.svg?branch=master)](https://travis-ci.org/Soft/rainbowpath)
 [![GitHub release](https://img.shields.io/github/release/Soft/rainbowpath.svg)](https://github.com/Soft/rainbowpath/releases)
+[![AUR version](https://img.shields.io/aur/version/rainbowpath.svg)](https://aur.archlinux.org/packages/rainbowpath/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 `rainbowpath` is a program for making paths pretty. It can be used to make pretty
@@ -20,7 +21,8 @@ working directory.
 
 Statically linked release binaries are available on GitHub [releases
 page](https://github.com/Soft/rainbowpath/releases). These should work on most
-modern Linux systems.
+modern Linux systems. For Arch Linux, `rainbowpath` is also available on
+[AUR](https://aur.archlinux.org/packages/rainbowpath/).
 
 ### Building
 
