@@ -40,6 +40,7 @@ Options:
   -p PALETTE  Comma-separated list of colors for path components
               Colors are represented as numbers between 0 and 255
   -s COLOR    Color for path separators
+  -c          Replace home directory path prefix with ~
   -n          Do not append newline
   -b          Escape color codes for use in Bash prompts
   -h          Display this help
