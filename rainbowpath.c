@@ -19,7 +19,7 @@ static const size_t INITIAL_BUFFER_SIZE = 32;
 static const size_t INITIAL_PATH_SIZE = 512;
 
 static const char *USAGE =
-  "Usage: " PACKAGE_NAME " [-p PALETTE] [-s COLOR] [-n] [-b] [-h] [-v] [PATH]\n"
+  "Usage: " PACKAGE_NAME " [-p PALETTE] [-s COLOR] [-c] [-n] [-b] [-h] [-v] [PATH]\n"
   "Color path components using a palette.\n\n"
   "Options:\n"
   "  -p PALETTE  Comma-separated list of colors for path components\n"

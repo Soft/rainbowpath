@@ -33,7 +33,7 @@ make
 ### Usage
 
 ```
-Usage: rainbowpath [-p PALETTE] [-s COLOR] [-n] [-b] [-h] [-v] [PATH]
+Usage: rainbowpath [-p PALETTE] [-s COLOR] [-c] [-n] [-b] [-h] [-v] [PATH]
 Color path components using a palette.
 
 Options:
