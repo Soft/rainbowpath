@@ -7,7 +7,7 @@ rainbowpath \- Color path components using a palette.
 .SH SYNOPSIS
 
 .B rainbowpath
-[\fB\-p\fR \fIPALETTE\fR] [\fB\-s\fR \fICOLOR\fR] [\fB\-c\fR] [\fB\-n\fR] [\fB\-b\fR] [\fB\-h\fR] [\fB\-v\fR] [\fIPATH\fR]
+[\fB\-p\fR \fIPALETTE\fR] [\fB\-s\fR \fISTYLE\fR] [\fB\-c\fR] [\fB\-n\fR] [\fB\-b\fR] [\fB\-h\fR] [\fB\-v\fR] [\fIPATH\fR]
 
 \fBrainbowpath\fR formats supplied path by coloring each path component with a
 color selected from a palette. Colors for path components are selected based on
@@ -19,32 +19,31 @@ current working directory.
 .SH OPTIONS
 
 .TP
-.BI \-p " PALETTE"
-Comma-separated list of colors for path components. Colors are represented as
-numbers between \fI0\fR and \fI255\fR.
+.BI \-p " PALETTE\fR,\fP " \-\-palette " PALETTE"
+Comma-separated list of styles for path components.
 
 .TP
-.BI \-s " COLOR"
-Color for path separators.
+.BI \-s " STYLE\fR,\fP " \-\-separator " STYLE"
+Style for path separators.
 
 .TP
-.BI \-c
+.BR \-c ", " \-\-compact
 Replace home directory path prefix with \fI~\fR.
 
 .TP
-.BI \-n
+.BR \-n ", " \-\-newline
 Do not append newline.
 
 .TP
-.BI \-b
-Escape color codes for use in Bash prompts.
+.BR \-b ", " \-\-bash
+Escape control codes for use in Bash prompts.
 
 .TP
-.BI \-h
+.BR \-h ", " \-\-help
 Display help.
 
 .TP
-.BI \-v
+.BR \-v ", " \-\-version
 Display version information.
 
 .SH AUTHORS

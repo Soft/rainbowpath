@@ -44,17 +44,16 @@ static const size_t INITIAL_PALETTE_SIZE = 32;
 static const size_t INITIAL_PATH_SIZE = 512;
 
 static const char *USAGE =
-  "Usage: " PACKAGE_NAME " [-p PALETTE] [-s COLOR] [-c] [-n] [-b] [-h] [-v] [PATH]\n"
+  "Usage: " PACKAGE_NAME " [-p PALETTE] [-s STYLE] [-c] [-n] [-b] [-h] [-v] [PATH]\n"
   "Color path components using a palette.\n\n"
   "Options:\n"
-  "  -p PALETTE  Comma-separated list of colors for path components\n"
-  "              Colors are represented as numbers between 0 and 255\n"
-  "  -s COLOR    Color for path separators\n"
-  "  -c          Replace home directory path prefix with ~\n"
-  "  -n          Do not append newline\n"
-  "  -b          Escape color codes for use in Bash prompts\n"
-  "  -h          Display this help\n"
-  "  -v          Display version information\n";
+  "  -p, --palette=PALETTE    Comma-separated list of styles for path components\n"
+  "  -s, --separator=STYLE    Style for path separators\n"
+  "  -c, --compact            Replace home directory path prefix with ~\n"
+  "  -n, --newline            Do not append newline\n"
+  "  -b, --bash               Escape control codes for use in Bash prompts\n"
+  "  -h, --help               Display this help\n"
+  "  -v, --version            Display version information\n";
 
 static inline void *check(void *ptr) {
   if (!ptr) {

@@ -35,18 +35,17 @@ make
 ### Usage
 
 ```
-Usage: rainbowpath [-p PALETTE] [-s COLOR] [-c] [-n] [-b] [-h] [-v] [PATH]
+Usage: rainbowpath [-p PALETTE] [-s STYLE] [-c] [-n] [-b] [-h] [-v] [PATH]
 Color path components using a palette.
 
 Options:
-  -p PALETTE  Comma-separated list of colors for path components
-              Colors are represented as numbers between 0 and 255
-  -s COLOR    Color for path separators
-  -c          Replace home directory path prefix with ~
-  -n          Do not append newline
-  -b          Escape color codes for use in Bash prompts
-  -h          Display this help
-  -v          Display version information
+  -p, --palette=PALETTE    Comma-separated list of styles for path components
+  -s, --separator=STYLE    Style for path separators
+  -c, --compact            Replace home directory path prefix with ~
+  -n, --newline            Do not append newline
+  -b, --bash               Escape control codes for use in Bash prompts
+  -h, --help               Display this help
+  -v, --version            Display version information
 ```
 
 ### Example: Using in a Bash prompt
