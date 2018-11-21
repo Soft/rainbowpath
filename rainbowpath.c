@@ -29,7 +29,7 @@ struct style {
 
 static const char PATH_SEP = '/';
 static const struct style PATH_SEP_STYLE =
-  { .fg = { .set = true, .color = 239 } };
+  { .fg = { .set = true, .color = 239 }, .bold = true };
 static const struct style PALETTE[] = {
   { .fg = { .set = true, .color = 160 } },
   { .fg = { .set = true, .color = 208 } },
@@ -63,13 +63,24 @@ static inline void *check(void *ptr) {
   return ptr;
 }
 
-static inline void begin_style(const struct style *style,
-                               bool bash_escape) {
+static void begin_style(const struct style *style,
+                        bool bash_escape) {
+  if (bash_escape)
+    fputs("\\[", stdout);
+  if (style->bold)
+    fputs("\e[1m", stdout);
+  if (style->dim)
+    fputs("\e[2m", stdout);
+  if (style->underlined)
+    fputs("\e[4m", stdout);
+  if (style->blink)
+    fputs("\e[5m", stdout);
+  if (style->bg.set)
+    printf("\e[48;5;%" PRIu8 "m", style->bg.color);
   if (style->fg.set)
-    printf("%s\e[38;5;%" PRIu8 "m%s",
-          bash_escape ? "\\[" : "",
-          style->fg.color,
-          bash_escape ? "\\]" : "");
+    printf("\e[38;5;%" PRIu8 "m", style->fg.color);
+  if (bash_escape)
+    fputs("\\]", stdout);
 }
 
 static inline void end_style(bool bash_escape) {
@@ -136,10 +147,12 @@ static void print_path(const char *path,
     if (ptr != rest) {
       begin_style(&palette[ind % palette_size], bash_escape);
       fwrite(rest, 1, ptr - rest, stdout);
+      end_style(bash_escape);
       ind++;
     }
     begin_style(sep_style, bash_escape);
     fputc(PATH_SEP, stdout);
+    end_style(bash_escape);
     rest = ptr + 1;
   }
   begin_style(&palette[ind % palette_size], bash_escape);
@@ -205,7 +218,8 @@ static const char *parse_color_assignment(const char *input,
   }
   return next;
  error:
-  free(value);
+  if (value)
+    free(value);
   return NULL;
 }
 
