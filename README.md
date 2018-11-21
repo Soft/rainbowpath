@@ -39,7 +39,7 @@ Usage: rainbowpath [-p PALETTE] [-s STYLE] [-c] [-n] [-b] [-h] [-v] [PATH]
 Color path components using a palette.
 
 Options:
-  -p, --palette=PALETTE    Comma-separated list of styles for path components
+  -p, --palette=PALETTE    Semicolon-separated list of styles for path components
   -s, --separator=STYLE    Style for path separators
   -c, --compact            Replace home directory path prefix with ~
   -n, --newline            Do not append newline
@@ -67,4 +67,28 @@ PROMPT_COMMAND=reset-prompt
 With this setup, `rainbowpath` will be executed every time prompt is about to be
 displayed and the output included into the prompt string.
 
+### Styles
+
+Styles specify how path components should look. `--palette` and `--separator`
+options accept styles as arguments. Style consists of a list of properties
+separated by commas. The possible properties are:
+
+| Property     | Description                   |
+| ------------ | ----------------------------- |
+| `fg=COLOR`   | Set text color to COLOR       |
+| `bg=COLOR`   | Set background color to COLOR |
+| `bold`       | Bold font                     |
+| `dim`        | Dim color                     |
+| `underlined` | Underlined text               |
+| `blink`      | Blinking text                 |
+
+Where `COLOR` is an integer between 0 and 255.
+
+For example, to display current working directory's path altering path
+components' styles between underlined green (2) and bold yellow (3) on magenta
+(5) background one could invoke `rainbowpath` as:
+
+``` shell
+rainbowpath --palette 'fg=2,underlined;fg=3,bg=5,bold'
+```
 

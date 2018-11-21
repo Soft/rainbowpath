@@ -47,7 +47,7 @@ static const char *USAGE =
   "Usage: " PACKAGE_NAME " [-p PALETTE] [-s STYLE] [-c] [-n] [-b] [-h] [-v] [PATH]\n"
   "Color path components using a palette.\n\n"
   "Options:\n"
-  "  -p, --palette=PALETTE    Comma-separated list of styles for path components\n"
+  "  -p, --palette=PALETTE    Semicolon-separated list of styles for path components\n"
   "  -s, --separator=STYLE    Style for path separators\n"
   "  -c, --compact            Replace home directory path prefix with ~\n"
   "  -n, --newline            Do not append newline\n"
