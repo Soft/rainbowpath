@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <pwd.h>
 #include <assert.h>
+#include <getopt.h>
 
 struct maybe_color {
   bool set;
@@ -27,7 +28,6 @@ struct style {
   bool blink;
 };
 
-static const char PATH_SEP = '/';
 static const struct style PATH_SEP_STYLE =
   { .fg = { .set = true, .color = 239 }, .bold = true };
 static const struct style PALETTE[] = {
@@ -39,6 +39,7 @@ static const struct style PALETTE[] = {
   { .fg = { .set = true, .color = 63 } }
 };
 
+static const char PATH_SEP = '/';
 static const size_t INITIAL_PALETTE_SIZE = 32;
 static const size_t INITIAL_PATH_SIZE = 512;
 
@@ -350,7 +351,18 @@ int main(int argc, char *argv[]) {
   struct style path_sep = PATH_SEP_STYLE;
   struct style *palette = NULL;
 
-  while ((arg = getopt(argc, argv, "p:s:cnbhv")) != -1) {
+  static const struct option options[] = {
+    { "palette",   required_argument, NULL, 'p' },
+    { "separator", required_argument, NULL, 's' },
+    { "compact",   no_argument,       NULL, 'c' },
+    { "newline",   no_argument,       NULL, 'n' },
+    { "bash",      no_argument,       NULL, 'b' },
+    { "help",      no_argument,       NULL, 'h' },
+    { "version",   no_argument,       NULL, 'v' },
+    { 0 }
+  };
+
+  while ((arg = getopt_long(argc, argv, "p:s:cnbhv", options, NULL)) != -1) {
     switch (arg) {
     case 'p':
       if ((palette_size = parse_palette(optarg, &palette)) == 0) {
