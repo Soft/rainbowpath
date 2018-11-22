@@ -1,3 +1,4 @@
+'\" t
 .TH RAINBOWPATH 1 2018
 
 .SH NAME
@@ -7,7 +8,7 @@ rainbowpath \- Color path components using a palette.
 .SH SYNOPSIS
 
 .B rainbowpath
-[\fB\-p\fR \fIPALETTE\fR] [\fB\-s\fR \fICOLOR\fR] [\fB\-c\fR] [\fB\-n\fR] [\fB\-b\fR] [\fB\-h\fR] [\fB\-v\fR] [\fIPATH\fR]
+[\fB\-p\fR \fIPALETTE\fR] [\fB\-s\fR \fISTYLE\fR] [\fB\-c\fR] [\fB\-n\fR] [\fB\-b\fR] [\fB\-h\fR] [\fB\-v\fR] [\fIPATH\fR]
 
 \fBrainbowpath\fR formats supplied path by coloring each path component with a
 color selected from a palette. Colors for path components are selected based on
@@ -19,33 +20,62 @@ current working directory.
 .SH OPTIONS
 
 .TP
-.BI \-p " PALETTE"
-Comma-separated list of colors for path components. Colors are represented as
-numbers between \fI0\fR and \fI255\fR.
+.BI \-p " PALETTE\fR,\fP " \-\-palette " PALETTE"
+Semicolon-separated list of styles for path components.
 
 .TP
-.BI \-s " COLOR"
-Color for path separators.
+.BI \-s " STYLE\fR,\fP " \-\-separator " STYLE"
+Style for path separators.
 
 .TP
-.BI \-c
+.BR \-c ", " \-\-compact
 Replace home directory path prefix with \fI~\fR.
 
 .TP
-.BI \-n
+.BR \-n ", " \-\-newline
 Do not append newline.
 
 .TP
-.BI \-b
-Escape color codes for use in Bash prompts.
+.BR \-b ", " \-\-bash
+Escape control codes for use in Bash prompts.
 
 .TP
-.BI \-h
+.BR \-h ", " \-\-help
 Display help.
 
 .TP
-.BI \-v
+.BR \-v ", " \-\-version
 Display version information.
+
+.SH STYLES
+
+Styles specify how path components should look. \fB\-\-palette\fR and
+\fB\-\-separator\fR options accept styles as arguments. Style consists of a list
+of properties separated by commas. The possible properties are:
+
+.RS
+.TS
+lB lB
+l l.
+Property	Description
+fg=\fICOLOR\fR	Set text color to \fICOLOR\fR
+bg=\fICOLOR\fR	Set background color to \fICOLOR\fR
+bold	Bold font
+dim	Dim color
+underlined	Underlined text
+blink	Blinking text
+.TE
+.RE
+
+Where \fICOLOR\fR is an integer between \fI0\fR and \fI255\fR.
+
+For example, the following invocation will display the current working
+directory's path altering path components' styles between underlined green
+(\fI2\fR) and bold yellow (\fI3\fR) on magenta (\fI5\fR) background:
+
+.nf
+rainbowpath --palette 'fg=2,underlined;fg=3,bg=5,bold'
+.fi
 
 .SH AUTHORS
 Samuel Laurén <samuel.lauren@iki.fi>

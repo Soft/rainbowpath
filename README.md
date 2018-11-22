@@ -35,18 +35,17 @@ make
 ### Usage
 
 ```
-Usage: rainbowpath [-p PALETTE] [-s COLOR] [-c] [-n] [-b] [-h] [-v] [PATH]
+Usage: rainbowpath [-p PALETTE] [-s STYLE] [-c] [-n] [-b] [-h] [-v] [PATH]
 Color path components using a palette.
 
 Options:
-  -p PALETTE  Comma-separated list of colors for path components
-              Colors are represented as numbers between 0 and 255
-  -s COLOR    Color for path separators
-  -c          Replace home directory path prefix with ~
-  -n          Do not append newline
-  -b          Escape color codes for use in Bash prompts
-  -h          Display this help
-  -v          Display version information
+  -p, --palette=PALETTE    Semicolon-separated list of styles for path components
+  -s, --separator=STYLE    Style for path separators
+  -c, --compact            Replace home directory path prefix with ~
+  -n, --newline            Do not append newline
+  -b, --bash               Escape control codes for use in Bash prompts
+  -h, --help               Display this help
+  -v, --version            Display version information
 ```
 
 ### Example: Using in a Bash prompt
@@ -68,4 +67,28 @@ PROMPT_COMMAND=reset-prompt
 With this setup, `rainbowpath` will be executed every time prompt is about to be
 displayed and the output included into the prompt string.
 
+### Styles
+
+Styles specify how path components should look. `--palette` and `--separator`
+options accept styles as arguments. Style consists of a list of properties
+separated by commas. The possible properties are:
+
+| Property     | Description                   |
+| ------------ | ----------------------------- |
+| `fg=COLOR`   | Set text color to COLOR       |
+| `bg=COLOR`   | Set background color to COLOR |
+| `bold`       | Bold font                     |
+| `dim`        | Dim color                     |
+| `underlined` | Underlined text               |
+| `blink`      | Blinking text                 |
+
+Where `COLOR` is an integer between 0 and 255.
+
+For example, the following invocation will display the current working
+directory's path altering path components' styles between underlined green (2)
+and bold yellow (3) on magenta (5) background:
+
+``` shell
+rainbowpath --palette 'fg=2,underlined;fg=3,bg=5,bold'
+```
 
