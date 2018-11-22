@@ -84,9 +84,9 @@ separated by commas. The possible properties are:
 
 Where `COLOR` is an integer between 0 and 255.
 
-For example, to display current working directory's path altering path
-components' styles between underlined green (2) and bold yellow (3) on magenta
-(5) background one could invoke `rainbowpath` as:
+For example, the following invocation will display the current working
+directory's path altering path components' styles between underlined green (2)
+and bold yellow (3) on magenta (5) background:
 
 ``` shell
 rainbowpath --palette 'fg=2,underlined;fg=3,bg=5,bold'
