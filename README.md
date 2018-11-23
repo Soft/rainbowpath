@@ -48,7 +48,7 @@ Options:
   -v, --version            Display version information
 ```
 
-### Example: Using in a Bash prompt
+### Use in a Bash prompt
 
 In Bash, what appears in the shell prompt can be controlled using the `PS1`
 variable. In addition, `PROMPT_COMMAND` variable can be used to execute commands
@@ -73,14 +73,14 @@ Styles specify how path components should look. `--palette` and `--separator`
 options accept styles as arguments. Style consists of a list of properties
 separated by commas. The possible properties are:
 
-| Property     | Description                   |
-| ------------ | ----------------------------- |
-| `fg=COLOR`   | Set text color to COLOR       |
-| `bg=COLOR`   | Set background color to COLOR |
-| `bold`       | Bold font                     |
-| `dim`        | Dim color                     |
-| `underlined` | Underlined text               |
-| `blink`      | Blinking text                 |
+| Property     | Description                     |
+| ------------ | ------------------------------- |
+| `fg=COLOR`   | Set text color to `COLOR`       |
+| `bg=COLOR`   | Set background color to `COLOR` |
+| `bold`       | Bold font                       |
+| `dim`        | Dim color                       |
+| `underlined` | Underlined text                 |
+| `blink`      | Blinking text                   |
 
 Where `COLOR` is an integer between 0 and 255.
 
