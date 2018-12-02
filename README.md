@@ -35,17 +35,21 @@ make
 ### Usage
 
 ```
-Usage: rainbowpath [-p PALETTE] [-s STYLE] [-c] [-n] [-b] [-h] [-v] [PATH]
+Usage: rainbowpath [-p PALETTE] [-s STYLE] [-S STRING] [-l] [-c] [-n] [-b] [-h] [-v] [PATH]
 Color path components using a palette.
 
 Options:
-  -p, --palette=PALETTE    Semicolon-separated list of styles for path components
-  -s, --separator=STYLE    Style for path separators
-  -c, --compact            Replace home directory path prefix with ~
-  -n, --newline            Do not append newline
-  -b, --bash               Escape control codes for use in Bash prompts
-  -h, --help               Display this help
-  -v, --version            Display version information
+  -p, --palette=PALETTE             Semicolon-separated list of styles for
+                                    path components
+  -s, --separator=STYLE             Style for path separators
+  -S, --separator-string=SEPARATOR  String used to separate path components
+                                    in the output (defaults to '/')
+  -l, --leading                     Do not display leading path separator
+  -c, --compact                     Replace home directory path prefix with ~
+  -n, --newline                     Do not append newline
+  -b, --bash                        Escape control codes for use in Bash prompts
+  -h, --help                        Display this help
+  -v, --version                     Display version information
 ```
 
 ### Use in a Bash prompt

@@ -39,21 +39,24 @@ static const struct style PALETTE[] = {
   { .fg = { .set = true, .color = 63 } }
 };
 
-static const char PATH_SEP = '/';
 static const size_t INITIAL_PALETTE_SIZE = 32;
 static const size_t INITIAL_PATH_SIZE = 512;
 
 static const char *USAGE =
-  "Usage: " PACKAGE_NAME " [-p PALETTE] [-s STYLE] [-c] [-n] [-b] [-h] [-v] [PATH]\n"
+  "Usage: " PACKAGE_NAME " [-p PALETTE] [-s STYLE] [-S STRING] [-l] [-c] [-n] [-b] [-h] [-v] [PATH]\n"
   "Color path components using a palette.\n\n"
   "Options:\n"
-  "  -p, --palette=PALETTE    Semicolon-separated list of styles for path components\n"
-  "  -s, --separator=STYLE    Style for path separators\n"
-  "  -c, --compact            Replace home directory path prefix with ~\n"
-  "  -n, --newline            Do not append newline\n"
-  "  -b, --bash               Escape control codes for use in Bash prompts\n"
-  "  -h, --help               Display this help\n"
-  "  -v, --version            Display version information\n";
+  "  -p, --palette=PALETTE             Semicolon-separated list of styles for\n"
+  "                                    path components\n"
+  "  -s, --separator=STYLE             Style for path separators\n"
+  "  -S, --separator-string=SEPARATOR  String used to separate path components\n"
+  "                                    in the output (defaults to '/')\n"
+  "  -l, --leading                     Do not display leading path separator\n"
+  "  -c, --compact                     Replace home directory path prefix with ~\n"
+  "  -n, --newline                     Do not append newline\n"
+  "  -b, --bash                        Escape control codes for use in Bash prompts\n"
+  "  -h, --help                        Display this help\n"
+  "  -v, --version                     Display version information\n";
 
 static inline void *check(void *ptr) {
   if (!ptr) {
@@ -125,7 +128,7 @@ static char *compact_path(const char *path) {
   const size_t home_len = strlen(home);
   if (strncmp(path, home, home_len) == 0) {
     const char next = *(path + home_len);
-    if (next == PATH_SEP || next == '\0') {
+    if (next == '/' || next == '\0') {
       const size_t result_size = (path_len - home_len + 2) * sizeof(char);
       char *result = check(malloc(result_size));
       strncpy(result, "~", result_size);
@@ -137,13 +140,17 @@ static char *compact_path(const char *path) {
 }
 
 static void print_path(const char *path,
+                       const char *separator,
                        const struct style *sep_style,
                        const struct style *palette,
                        const size_t palette_size,
+                       bool skip_leading,
                        bool bash_escape) {
   const char *rest = path, *ptr;
   size_t ind = 0;
-  while ((ptr = strchr(rest, PATH_SEP))) {
+  if (skip_leading && *rest == '/')
+    rest++;
+  while ((ptr = strchr(rest, '/'))) {
     if (ptr != rest) {
       begin_style(&palette[ind % palette_size], bash_escape);
       fwrite(rest, 1, ptr - rest, stdout);
@@ -151,7 +158,7 @@ static void print_path(const char *path,
       ind++;
     }
     begin_style(sep_style, bash_escape);
-    fputc(PATH_SEP, stdout);
+    fputs(separator, stdout);
     end_style(bash_escape);
     rest = ptr + 1;
   }
@@ -344,24 +351,26 @@ static inline void version(void) {
 
 int main(int argc, char *argv[]) {
   int arg, ret = EXIT_SUCCESS;
-  bool new_line = true, bash_escape = false, compact = false;
-  char *path = NULL, *compacted = NULL, *selected;
+  bool new_line = true, bash_escape = false, compact = false, skip_leading = false;
+  char *path = NULL, *compacted = NULL, *selected, *separator = "/";
   size_t palette_size = sizeof(PALETTE) / sizeof(struct style);
   struct style path_sep = PATH_SEP_STYLE;
   struct style *palette = NULL;
 
   static const struct option options[] = {
-    { "palette",   required_argument, NULL, 'p' },
-    { "separator", required_argument, NULL, 's' },
-    { "compact",   no_argument,       NULL, 'c' },
-    { "newline",   no_argument,       NULL, 'n' },
-    { "bash",      no_argument,       NULL, 'b' },
-    { "help",      no_argument,       NULL, 'h' },
-    { "version",   no_argument,       NULL, 'v' },
+    { "palette",          required_argument, NULL, 'p' },
+    { "separator",        required_argument, NULL, 's' },
+    { "separator-string", required_argument, NULL, 'S' },
+    { "leading",          no_argument,       NULL, 'l' },
+    { "compact",          no_argument,       NULL, 'c' },
+    { "newline",          no_argument,       NULL, 'n' },
+    { "bash",             no_argument,       NULL, 'b' },
+    { "help",             no_argument,       NULL, 'h' },
+    { "version",          no_argument,       NULL, 'v' },
     { 0 }
   };
 
-  while ((arg = getopt_long(argc, argv, "p:s:cnbhv", options, NULL)) != -1) {
+  while ((arg = getopt_long(argc, argv, "p:s:S:lcnbhv", options, NULL)) != -1) {
     switch (arg) {
     case 'p':
       if ((palette_size = parse_palette(optarg, &palette)) == 0) {
@@ -376,6 +385,12 @@ int main(int argc, char *argv[]) {
         ret = EXIT_FAILURE;
         goto out;
       }
+      break;
+    case 'S':
+      separator = optarg;
+      break;
+    case 'l':
+      skip_leading = true;
       break;
     case 'c':
       compact = true;
@@ -423,9 +438,11 @@ int main(int argc, char *argv[]) {
   }
 
   print_path(selected,
+             separator,
              &path_sep,
              palette ? palette : PALETTE,
              palette_size,
+             skip_leading,
              bash_escape);
 
   if (new_line) {

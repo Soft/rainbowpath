@@ -8,7 +8,7 @@ rainbowpath \- Color path components using a palette.
 .SH SYNOPSIS
 
 .B rainbowpath
-[\fB\-p\fR \fIPALETTE\fR] [\fB\-s\fR \fISTYLE\fR] [\fB\-c\fR] [\fB\-n\fR] [\fB\-b\fR] [\fB\-h\fR] [\fB\-v\fR] [\fIPATH\fR]
+[\fB\-p\fR \fIPALETTE\fR] [\fB\-s\fR \fISTYLE\fR] [\fB\-S\fR \fISEPARATOR\fR] [\fB\-l\fR] [\fB\-c\fR] [\fB\-n\fR] [\fB\-b\fR] [\fB\-h\fR] [\fB\-v\fR] [\fIPATH\fR]
 
 \fBrainbowpath\fR formats supplied path by coloring each path component with a
 color selected from a palette. Colors for path components are selected based on
@@ -26,6 +26,14 @@ Semicolon-separated list of styles for path components.
 .TP
 .BI \-s " STYLE\fR,\fP " \-\-separator " STYLE"
 Style for path separators.
+
+.TP
+.BI \-S " SEPARATOR\fR,\fP " \-\-separator\-string " SEPARATOR"
+String used to separate path components in the output (defaults to '\fI/\fR').
+
+.TP
+.BR \-l ", " \-\-leading
+Do not display leading path separator.
 
 .TP
 .BR \-c ", " \-\-compact
