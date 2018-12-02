@@ -43,7 +43,7 @@ static const size_t INITIAL_PALETTE_SIZE = 32;
 static const size_t INITIAL_PATH_SIZE = 512;
 
 static const char *USAGE =
-  "Usage: " PACKAGE_NAME " [-p PALETTE] [-s STYLE] [-S STRING] [-l] [-c] [-n] [-b] [-h] [-v] [PATH]\n"
+  "Usage: " PACKAGE_NAME " [-p PALETTE] [-s STYLE] [-S SEPARATOR] [-l] [-c] [-n] [-b] [-h] [-v] [PATH]\n"
   "Color path components using a palette.\n\n"
   "Options:\n"
   "  -p, --palette=PALETTE             Semicolon-separated list of styles for\n"
