@@ -11,10 +11,10 @@ jobs:
     - stage: binary
       before_install:
         - sudo apt-get update
-        - sudo apt-get install -y musl-tools
+        - sudo apt-get install -y musl-tools libncurses-dev
       script:
         - ./autogen.sh
-        - CC=musl-gcc CFLAGS="-static -O2" ./configure
+        - CC=musl-gcc CFLAGS="-static -O2" ./configure --with-curses
         - make
         - strip rainbowpath
       deploy:

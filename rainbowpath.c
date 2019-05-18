@@ -14,6 +14,14 @@
 #include <assert.h>
 #include <getopt.h>
 
+#ifdef HAVE_CURSES
+#include <curses.h>
+#include <term.h>
+#endif
+
+#define ARRAY_SIZE(array)                       \
+  (sizeof(array) / sizeof(array[0]))
+
 struct maybe_color {
   bool set;
   uint8_t color;
@@ -28,9 +36,26 @@ struct style {
   bool blink;
 };
 
-static const struct style PATH_SEP_STYLE =
-  { .fg = { .set = true, .color = 239 }, .bold = true };
-static const struct style PALETTE[] = {
+static const struct style PATH_SEP_STYLE_8 = {
+  .fg = { .set = true, .color = 7 },
+  .dim = true
+};
+
+static const struct style PALETTE_8[] = {
+  { .fg = { .set = true, .color = 1 } },
+  { .fg = { .set = true, .color = 3 } },
+  { .fg = { .set = true, .color = 2 } },
+  { .fg = { .set = true, .color = 6 } },
+  { .fg = { .set = true, .color = 4 } },
+  { .fg = { .set = true, .color = 5 } }
+};
+
+static const struct style PATH_SEP_STYLE_256 = {
+  .fg = { .set = true, .color = 239 },
+  .bold = true
+};
+
+static const struct style PALETTE_256[] = {
   { .fg = { .set = true, .color = 160 } },
   { .fg = { .set = true, .color = 208 } },
   { .fg = { .set = true, .color = 220 } },
@@ -41,6 +66,17 @@ static const struct style PALETTE[] = {
 
 static const size_t INITIAL_PALETTE_SIZE = 32;
 static const size_t INITIAL_PATH_SIZE = 512;
+
+struct terminal {
+  int color_count;
+  char *fg;
+  char *bg;
+  char *bold;
+  char *dim;
+  char *underlined;
+  char *blink;
+  char *reset;
+};
 
 static const char *USAGE =
   "Usage: " PACKAGE_NAME " [-p PALETTE] [-s STYLE] [-S SEPARATOR] [-l] [-c] [-n] [-b] [-h] [-v] [PATH]\n"
@@ -66,24 +102,56 @@ static inline void *check(void *ptr) {
   return ptr;
 }
 
-static void begin_style(const struct style *style,
+#ifdef HAVE_CURSES
+
+static inline void begin_attr(const char *code) {
+  putp(code);
+}
+
+static inline void begin_color(const char *code, uint8_t color) {
+  char *result = tiparm(code, color);
+  putp(result);
+}
+
+#else
+
+static inline void begin_attr(const char *code) {
+  fputs(code, stdout);
+}
+
+static inline void begin_color(const char *code, uint8_t color) {
+  fprintf(stdout, code, color);
+}
+
+#endif
+
+static void begin_style(const struct terminal *terminal,
+                        const struct style *style,
                         bool bash_escape) {
-  if (bash_escape)
+  if (bash_escape) {
     fputs("\\[", stdout);
-  if (style->bold)
-    fputs("\e[1m", stdout);
-  if (style->dim)
-    fputs("\e[2m", stdout);
-  if (style->underlined)
-    fputs("\e[4m", stdout);
-  if (style->blink)
-    fputs("\e[5m", stdout);
-  if (style->bg.set)
-    printf("\e[48;5;%" PRIu8 "m", style->bg.color);
-  if (style->fg.set)
-    printf("\e[38;5;%" PRIu8 "m", style->fg.color);
-  if (bash_escape)
+  }
+  if (style->bold) {
+    begin_attr(terminal->bold);
+  }
+  if (style->dim) {
+    begin_attr(terminal->dim);
+  }
+  if (style->underlined) {
+    begin_attr(terminal->underlined);
+  }
+  if (style->blink) {
+    begin_attr(terminal->blink);
+  }
+  if (style->bg.set) {
+    begin_color(terminal->bg, style->bg.color);
+  }
+  if (style->fg.set) {
+    begin_color(terminal->fg, style->fg.color);
+  }
+  if (bash_escape) {
     fputs("\\]", stdout);
+  }
 }
 
 static inline void end_style(bool bash_escape) {
@@ -139,7 +207,8 @@ static char *compact_path(const char *path) {
   return check(strdup(path));
 }
 
-static void print_path(const char *path,
+static void print_path(const struct terminal *terminal,
+                       const char *path,
                        const char *separator,
                        const struct style *sep_style,
                        const struct style *palette,
@@ -148,21 +217,22 @@ static void print_path(const char *path,
                        bool bash_escape) {
   const char *rest = path, *ptr;
   size_t ind = 0;
-  if (skip_leading && *rest == '/')
+  if (skip_leading && *rest == '/') {
     rest++;
+  }
   while ((ptr = strchr(rest, '/'))) {
     if (ptr != rest) {
-      begin_style(&palette[ind % palette_size], bash_escape);
+      begin_style(terminal, &palette[ind % palette_size], bash_escape);
       fwrite(rest, 1, ptr - rest, stdout);
       end_style(bash_escape);
       ind++;
     }
-    begin_style(sep_style, bash_escape);
+    begin_style(terminal, sep_style, bash_escape);
     fputs(separator, stdout);
     end_style(bash_escape);
     rest = ptr + 1;
   }
-  begin_style(&palette[ind % palette_size], bash_escape);
+  begin_style(terminal, &palette[ind % palette_size], bash_escape);
   fputs(rest, stdout);
   end_style(bash_escape);
 }
@@ -175,8 +245,9 @@ static inline char *make_string(const char *begin, const char *end) {
 }
 
 static inline void consume_whitespace(const char **input) {
-  while (**input && isspace(**input))
+  while (**input && isspace(**input)) {
     (*input)++;
+  }
 }
 
 static const char *parse_token(const char *input, char **result) {
@@ -214,19 +285,23 @@ static const char *parse_color_assignment(const char *input,
     current = next;
     if ((next = parse_token(current, &value))) {
       num = strtoul(value, &num_end, 10);
-      if (num == 0 && num_end == value)
-        goto error;;
-      if (num > UINT8_MAX)
+      if (num == 0 && num_end == value) {
         goto error;
-      if (*num_end != '\0')
+      };
+      if (num > UINT8_MAX) {
         goto error;
+      }
+      if (*num_end != '\0') {
+        goto error;
+      }
       *result = (uint8_t)num;
     }
   }
   return next;
  error:
-  if (value)
+  if (value) {
     free(value);
+  }
   return NULL;
 }
 
@@ -245,7 +320,7 @@ static const char *parse_style_inner(const char *input,
           style->fg.set = true;
           style->fg.color = color;
         } else {
-          fputs("foreground color expected\n", stderr);
+          fputs("Foreground color expected\n", stderr);
           goto error;
         }
       } else if (strcmp(key, "bg") == 0) {
@@ -254,25 +329,25 @@ static const char *parse_style_inner(const char *input,
           style->bg.set = true;
           style->bg.color = color;
         } else {
-          fputs("background color expected\n", stderr);
+          fputs("Background color expected\n", stderr);
           goto error;
         }
       } else if (strcmp(key, "bold") == 0) {
-          style->bold = true;
+        style->bold = true;
       } else if (strcmp(key, "dim") == 0) {
-          style->dim = true;
+        style->dim = true;
       } else if (strcmp(key, "underlined") == 0) {
-          style->underlined = true;
+        style->underlined = true;
       } else if (strcmp(key, "blink") == 0) {
-          style->blink = true;
+        style->blink = true;
       } else {
-        fprintf(stderr, "unknown property '%s'\n", key);
+        fprintf(stderr, "Unknown property '%s'\n", key);
         goto error;
       }
       free(key);
       key = NULL;
     } else {
-      fputs("expected a property\n", stderr);
+      fputs("Expected a property\n", stderr);
       goto error;
     }
     if ((next = parse_char(current, ','))) {
@@ -282,8 +357,9 @@ static const char *parse_style_inner(const char *input,
     }
   }
  error:
-  if (key)
+  if (key) {
     free(key);
+  }
   return NULL;
 }
 
@@ -294,10 +370,10 @@ static bool parse_style(const char *input,
     if ((next = peek_char(next, '\0'))) {
       return true;
     } else {
-      fputs("expected eof\n", stderr);
+      fputs("Expected eof\n", stderr);
     }
   } else {
-      fputs("expected style\n", stderr);
+    fputs("Expected style\n", stderr);
   }
   return false;
 }
@@ -312,7 +388,7 @@ static size_t parse_palette(const char *input,
     if ((next = parse_style_inner(current, &palette[pos]))) {
       current = next;
     } else {
-      fputs("expected a style definition\n", stderr);
+      fputs("Expected a style definition\n", stderr);
       goto error;
     }
 
@@ -328,7 +404,7 @@ static size_t parse_palette(const char *input,
       current = next;
       break;
     } else {
-      fputs("expected ';'\n", stderr);
+      fputs("Expected ';'\n", stderr);
       goto error;
     }
   }
@@ -336,10 +412,93 @@ static size_t parse_palette(const char *input,
   *result = palette;
   return pos + 1;
  error:
-  if (palette)
+  if (palette) {
     free(palette);
+  }
   return 0;
 }
+
+#ifdef HAVE_CURSES
+
+static bool setup_terminal(struct terminal *terminal) {
+  int err, int_value;
+  char *str_value;
+
+  if (setupterm(NULL, STDOUT_FILENO, &err) == ERR) {
+    switch (err) {
+    case 1:
+      fputs("Invalid terminal type\n", stderr);
+      return false;
+    case 0:
+      fputs("Failed to determine terminal type\n", stderr);
+      return false;
+    case -1:
+      fputs("Failed to access terminfo database\n", stderr);
+      return false;
+    default:
+      fputs("Unknown error\n", stderr);
+      return false;
+    }
+  }
+
+  if ((int_value = tigetnum("colors")) < 0) {
+    return false;
+  }
+  terminal->color_count = int_value;
+
+  if ((str_value = tigetstr("setaf")) < (char *)0) {
+    return false;
+  }
+  terminal->fg = str_value;
+
+  if ((str_value = tigetstr("setab")) < (char *)0) {
+    return false;
+  }
+  terminal->bg = str_value;
+
+  if ((str_value = tigetstr("bold")) < (char *)0) {
+    return false;
+  }
+  terminal->bold = str_value;
+
+  if ((str_value = tigetstr("dim")) < (char *)0) {
+    return false;
+  }
+  terminal->dim = str_value;
+
+  if ((str_value = tigetstr("smul")) < (char *)0) {
+    return false;
+  }
+  terminal->underlined = str_value;
+
+  if ((str_value = tigetstr("blink")) < (char *)0) {
+    return false;
+  }
+  terminal->blink = str_value;
+
+  if ((str_value = tigetstr("sgr0")) < (char *)0) {
+    return false;
+  }
+  terminal->reset = str_value;
+
+  return true;
+}
+
+#else
+
+static bool setup_terminal(struct terminal *terminal) {
+  terminal->color_count = 256;
+  terminal->fg = "\e[38;5;%" PRIu8 "m";
+  terminal->bg = "\e[48;5;%" PRIu8 "m";
+  terminal->bold = "\e[1m";
+  terminal->dim = "\e[2m";
+  terminal->underlined = "\e[4m";
+  terminal->blink = "\e[5m";
+  terminal->reset = "\e[0m";
+  return true;
+}
+
+#endif
 
 static inline void usage(void) {
   fputs(USAGE, stderr);
@@ -353,9 +512,26 @@ int main(int argc, char *argv[]) {
   int arg, ret = EXIT_SUCCESS;
   bool new_line = true, bash_escape = false, compact = false, skip_leading = false;
   char *path = NULL, *compacted = NULL, *selected, *separator = "/";
-  size_t palette_size = sizeof(PALETTE) / sizeof(struct style);
-  struct style path_sep = PATH_SEP_STYLE;
+  size_t palette_size;
+  struct style path_sep;
+  const struct style *default_palette;
   struct style *palette = NULL;
+  struct terminal terminal;
+
+  if (!setup_terminal(&terminal)) {
+    ret = EXIT_FAILURE;
+    goto out;
+  }
+
+  if (terminal.color_count >= 256) {
+    palette_size = ARRAY_SIZE(PALETTE_256);
+    default_palette = PALETTE_256;
+    path_sep = PATH_SEP_STYLE_256;
+  } else {
+    palette_size = ARRAY_SIZE(PALETTE_8);
+    default_palette = PALETTE_8;
+    path_sep = PATH_SEP_STYLE_8;
+  }
 
   static const struct option options[] = {
     { "palette",          required_argument, NULL, 'p' },
@@ -437,10 +613,11 @@ int main(int argc, char *argv[]) {
     selected = path ? path : argv[optind];
   }
 
-  print_path(selected,
+  print_path(&terminal,
+             selected,
              separator,
              &path_sep,
-             palette ? palette : PALETTE,
+             palette ? palette : default_palette,
              palette_size,
              skip_leading,
              bash_escape);
@@ -450,15 +627,19 @@ int main(int argc, char *argv[]) {
   }
 
  out:
+
   if (palette) {
     free(palette);
   }
+
   if (path) {
     free(path);
   }
+
   if (compacted) {
     free(compacted);
   }
+
   return ret;
 }
 
