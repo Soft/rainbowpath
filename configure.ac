@@ -1,5 +1,6 @@
 AC_INIT([rainbowpath], [0.4.0], [samuel.lauren@iki.fi])
 AM_INIT_AUTOMAKE([-Wall foreign])
+AC_CONFIG_SRCDIR([src/rainbowpath.c])
 AC_LANG([C])
 
 AC_PROG_CC
@@ -28,5 +29,5 @@ AM_CONDITIONAL([USE_CURSES], [test "$HAVE_CURSES" -eq 1])
 AS_IF([test "$HAVE_CURSES" -eq 1], [AC_DEFINE([HAVE_CURSES], [1], [Use curses])])
 
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile])
 AC_OUTPUT

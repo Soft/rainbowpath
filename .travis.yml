@@ -5,9 +5,9 @@ jobs:
     - stage: test
       script:
         - ./autogen.sh
-        - ./configure
+        - ./configure --without-curses
         - make
-        - ./rainbowpath
+        - ./src/rainbowpath
     - stage: binary
       before_install:
         - sudo apt-get update
@@ -16,11 +16,11 @@ jobs:
         - ./autogen.sh
         - CC=musl-gcc CFLAGS="-static -O2" ./configure --with-curses
         - make
-        - strip rainbowpath
+        - strip ./src/rainbowpath
       deploy:
         provider: releases
         api_key: $GITHUB_OAUTH_TOKEN
-        file: rainbowpath
+        file: ./src/rainbowpath
         skip_cleanup: true
         on:
           tags: true

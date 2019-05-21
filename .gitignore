@@ -1,6 +1,7 @@
 *.o
 *.tar.gz
 .deps/*
+src/.deps/*
 Makefile
 Makefile.in
 aclocal.m4
