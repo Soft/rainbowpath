@@ -26,7 +26,10 @@ AS_CASE(["$with_curses"],
     [HAVE_CURSES=0])])
 
 AM_CONDITIONAL([USE_CURSES], [test "$HAVE_CURSES" -eq 1])
-AS_IF([test "$HAVE_CURSES" -eq 1], [AC_DEFINE([HAVE_CURSES], [1], [Use curses])])
+AS_IF([test "$HAVE_CURSES" -eq 1],
+      [AC_DEFINE([HAVE_CURSES],
+      [1],
+      [Use curses])])
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile src/Makefile])
