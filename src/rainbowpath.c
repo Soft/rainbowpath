@@ -1,21 +1,20 @@
-#include "config.h"
 #include "rainbowpath.h"
+#include "config.h"
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <assert.h>
+#include <ctype.h>
+#include <errno.h>
+#include <getopt.h>
+#include <pwd.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <errno.h>
-#include <ctype.h>
 #include <sys/types.h>
-#include <pwd.h>
-#include <assert.h>
-#include <getopt.h>
+#include <unistd.h>
 
-#define ARRAY_SIZE(array) \
-  (sizeof(array) / sizeof(array[0]))
+#define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 
 struct maybe_color {
   bool set;
@@ -51,32 +50,39 @@ static const struct style PATH_SEP_STYLE_256 = {
 };
 
 static const struct style PALETTE_256[] = {
-  { .fg = { .set = true, .color = 160 } },
-  { .fg = { .set = true, .color = 208 } },
-  { .fg = { .set = true, .color = 220 } },
-  { .fg = { .set = true, .color = 82 } },
-  { .fg = { .set = true, .color = 39 } },
-  { .fg = { .set = true, .color = 63 } }
+  { .fg = {.set = true, .color = 160 } },
+  { .fg = {.set = true, .color = 208 } },
+  { .fg = {.set = true, .color = 220 } },
+  { .fg = {.set = true, .color = 82 } },
+  { .fg = {.set = true, .color = 39 } },
+  { .fg = {.set = true, .color = 63 } }
 };
 
 static const size_t INITIAL_PALETTE_SIZE = 32;
 static const size_t INITIAL_PATH_SIZE = 512;
 
 static const char *USAGE =
-  "Usage: " PACKAGE_NAME " [-p PALETTE] [-s STYLE] [-S SEPARATOR] [-l] [-c] [-n] [-b] [-h] [-v] [PATH]\n"
-  "Color path components using a palette.\n\n"
-  "Options:\n"
-  "  -p, --palette=PALETTE             Semicolon-separated list of styles for\n"
-  "                                    path components\n"
-  "  -s, --separator=STYLE             Style for path separators\n"
-  "  -S, --separator-string=SEPARATOR  String used to separate path components\n"
-  "                                    in the output (defaults to '/')\n"
-  "  -l, --leading                     Do not display leading path separator\n"
-  "  -c, --compact                     Replace home directory path prefix with ~\n"
-  "  -n, --newline                     Do not append newline\n"
-  "  -b, --bash                        Escape control codes for use in Bash prompts\n"
-  "  -h, --help                        Display this help\n"
-  "  -v, --version                     Display version information\n";
+    "Usage: " PACKAGE_NAME
+    " [-p PALETTE] [-s STYLE] [-S SEPARATOR] [-l] [-c] [-n] [-b] [-h] [-v] "
+    "[PATH]\n"
+    "Color path components using a palette.\n\n"
+    "Options:\n"
+    "  -p, --palette=PALETTE             Semicolon-separated list of styles "
+    "for\n"
+    "                                    path components\n"
+    "  -s, --separator=STYLE             Style for path separators\n"
+    "  -S, --separator-string=SEPARATOR  String used to separate path "
+    "components\n"
+    "                                    in the output (defaults to '/')\n"
+    "  -l, --leading                     Do not display leading path "
+    "separator\n"
+    "  -c, --compact                     Replace home directory path prefix "
+    "with ~\n"
+    "  -n, --newline                     Do not append newline\n"
+    "  -b, --bash                        Escape control codes for use in Bash "
+    "prompts\n"
+    "  -h, --help                        Display this help\n"
+    "  -v, --version                     Display version information\n";
 
 static inline void *check(void *ptr) {
   if (!ptr) {
@@ -86,8 +92,7 @@ static inline void *check(void *ptr) {
   return ptr;
 }
 
-static void begin_style(const struct style *style,
-                        bool bash_escape) {
+static void begin_style(const struct style *style, bool bash_escape) {
   if (bash_escape) {
     fputs("\\[", stdout);
   }
@@ -239,8 +244,7 @@ static inline const char *peek_char(const char *input, char c) {
   return *input == c ? input : NULL;
 }
 
-static const char *parse_color_assignment(const char *input,
-                                          uint8_t *result) {
+static const char *parse_color_assignment(const char *input, uint8_t *result) {
   const char *next, *current;
   char *value = NULL, *num_end;
   unsigned long num;
@@ -261,15 +265,14 @@ static const char *parse_color_assignment(const char *input,
     }
   }
   return next;
- error:
+error:
   if (value) {
     free(value);
   }
   return NULL;
 }
 
-static const char *parse_style_inner(const char *input,
-                                     struct style *style) {
+static const char *parse_style_inner(const char *input, struct style *style) {
   const char *current = input, *next;
   char *key = NULL;
   uint8_t color;
@@ -319,15 +322,14 @@ static const char *parse_style_inner(const char *input,
       return current;
     }
   }
- error:
+error:
   if (key) {
     free(key);
   }
   return NULL;
 }
 
-static bool parse_style(const char *input,
-                        struct style *style) {
+static bool parse_style(const char *input, struct style *style) {
   const char *next;
   if ((next = parse_style_inner(input, style))) {
     if ((next = peek_char(next, '\0'))) {
@@ -341,8 +343,7 @@ static bool parse_style(const char *input,
   return false;
 }
 
-static size_t parse_palette(const char *input,
-                            struct style **result) {
+static size_t parse_palette(const char *input, struct style **result) {
   const char *current = input, *next;
   size_t palette_size = INITIAL_PALETTE_SIZE, pos = 0;
   struct style *palette = check(calloc(palette_size, sizeof(*palette)));
@@ -374,11 +375,25 @@ static size_t parse_palette(const char *input,
 
   *result = palette;
   return pos + 1;
- error:
+error:
   if (palette) {
     free(palette);
   }
   return 0;
+}
+
+void select_palette(const struct style **palette,
+                    size_t *palette_size,
+                    struct style *path_sep) {
+  if (get_color_count() >= 256) {
+    *palette_size = ARRAY_SIZE(PALETTE_256);
+    *palette = PALETTE_256;
+    *path_sep = PATH_SEP_STYLE_256;
+  } else {
+    *palette_size = ARRAY_SIZE(PALETTE_8);
+    *palette = PALETTE_8;
+    *path_sep = PATH_SEP_STYLE_8;
+  }
 }
 
 static inline void usage(void) {
@@ -409,70 +424,62 @@ int main(int argc, char *argv[]) {
     goto out;
   }
 
-  if (get_color_count() >= 256) {
-    palette_size = ARRAY_SIZE(PALETTE_256);
-    default_palette = PALETTE_256;
-    path_sep = PATH_SEP_STYLE_256;
-  } else {
-    palette_size = ARRAY_SIZE(PALETTE_8);
-    default_palette = PALETTE_8;
-    path_sep = PATH_SEP_STYLE_8;
-  }
+  select_palette(&default_palette, &palette_size, &path_sep);
 
   static const struct option options[] = {
-    { "palette",          required_argument, NULL, 'p' },
-    { "separator",        required_argument, NULL, 's' },
-    { "separator-string", required_argument, NULL, 'S' },
-    { "leading",          no_argument,       NULL, 'l' },
-    { "compact",          no_argument,       NULL, 'c' },
-    { "newline",          no_argument,       NULL, 'n' },
-    { "bash",             no_argument,       NULL, 'b' },
-    { "help",             no_argument,       NULL, 'h' },
-    { "version",          no_argument,       NULL, 'v' },
-    { 0 }
+      { "palette", required_argument, NULL, 'p' },
+      { "separator", required_argument, NULL, 's' },
+      { "separator-string", required_argument, NULL, 'S' },
+      { "leading", no_argument, NULL, 'l' },
+      { "compact", no_argument, NULL, 'c' },
+      { "newline", no_argument, NULL, 'n' },
+      { "bash", no_argument, NULL, 'b' },
+      { "help", no_argument, NULL, 'h' },
+      { "version", no_argument, NULL, 'v' },
+      { 0 }
   };
 
   while ((arg = getopt_long(argc, argv, "p:s:S:lcnbhv", options, NULL)) != -1) {
     switch (arg) {
-    case 'p':
-      if ((palette_size = parse_palette(optarg, &palette)) == 0) {
-        fputs("Invalid palette\n", stderr);
+      case 'p':
+        if ((palette_size = parse_palette(optarg, &palette)) == 0) {
+          fputs("Invalid palette\n", stderr);
+          ret = EXIT_FAILURE;
+          goto out;
+        }
+        break;
+      case 's':
+        if (!parse_style(optarg, &path_sep)) {
+          fputs("Invalid separator style\n", stderr);
+          ret = EXIT_FAILURE;
+          goto out;
+        }
+        break;
+      case 'S':
+        separator = optarg;
+        break;
+      case 'l':
+        skip_leading = true;
+        break;
+      case 'c':
+        compact = true;
+        break;
+      case 'n':
+        new_line = false;
+        break;
+      case 'b':
+        bash_escape = true;
+        break;
+      case 'h':
+        usage();
+        goto out;
+      case 'v':
+        version();
+        goto out;
+      default:
+        usage();
         ret = EXIT_FAILURE;
         goto out;
-      }
-      break;
-    case 's':
-      if (!parse_style(optarg, &path_sep)) {
-        fputs("Invalid separator style\n", stderr);
-        ret = EXIT_FAILURE;
-        goto out;
-      }
-      break;
-    case 'S':
-      separator = optarg;
-      break;
-    case 'l':
-      skip_leading = true;
-      break;
-    case 'c':
-      compact = true;
-      break;
-    case 'n':
-      new_line = false;
-      break;
-    case 'b':
-      bash_escape = true;
-      break;
-    case 'h':
-      usage();
-      goto out;
-    case 'v':
-      version();
-      goto out;
-    default:
-      usage();
-      ret = EXIT_FAILURE;
-      goto out;
     }
   }
 
@@ -511,7 +518,7 @@ int main(int argc, char *argv[]) {
     fputc('\n', stdout);
   }
 
- out:
+out:
 
   if (palette) {
     free(palette);
@@ -527,4 +534,3 @@ int main(int argc, char *argv[]) {
 
   return ret;
 }
-

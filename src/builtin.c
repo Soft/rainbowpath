@@ -1,7 +1,7 @@
 #include "rainbowpath.h"
 
-#include <stdio.h>
 #include <inttypes.h>
+#include <stdio.h>
 
 #define COLOR_COUNT 256
 
@@ -40,4 +40,3 @@ void begin_blink(void) {
 void reset_style(void) {
   fputs("\e[0m", stdout);
 }
-

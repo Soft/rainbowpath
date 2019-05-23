@@ -17,25 +17,24 @@ struct terminal {
   char *reset;
 } terminal;
 
-
 bool setup_terminal(void) {
   int err, int_value;
   char *str_value;
 
   if (setupterm(NULL, STDOUT_FILENO, &err) == ERR) {
     switch (err) {
-    case 1:
-      fputs("Invalid terminal type\n", stderr);
-      return false;
-    case 0:
-      fputs("Failed to determine terminal type\n", stderr);
-      return false;
-    case -1:
-      fputs("Failed to access terminfo database\n", stderr);
-      return false;
-    default:
-      fputs("Unknown error\n", stderr);
-      return false;
+      case 1:
+        fputs("Invalid terminal type\n", stderr);
+        return false;
+      case 0:
+        fputs("Failed to determine terminal type\n", stderr);
+        return false;
+      case -1:
+        fputs("Failed to access terminfo database\n", stderr);
+        return false;
+      default:
+        fputs("Unknown error\n", stderr);
+        return false;
     }
   }
 
@@ -115,5 +114,3 @@ void begin_blink(void) {
 void reset_style(void) {
   putp(terminal.reset);
 }
-
-
