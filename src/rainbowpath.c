@@ -15,6 +15,8 @@
 #include <unistd.h>
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
+#define MIN(a, b) ((a) <= (b) ? (a) : (b))
+#define MAX(a, b) ((a) >= (b) ? (a) : (b))
 
 struct maybe_color {
   bool set;
@@ -248,6 +250,8 @@ static const char *parse_color_assignment(const char *input, uint8_t *result) {
   const char *next, *current;
   char *value = NULL, *num_end;
   unsigned long num;
+  int max_color = get_color_count() - 1;
+  max_color = MAX(max_color, 0);
   if ((next = parse_char(input, '='))) {
     current = next;
     if ((next = parse_token(current, &value))) {
@@ -255,7 +259,8 @@ static const char *parse_color_assignment(const char *input, uint8_t *result) {
       if (num == 0 && num_end == value) {
         goto error;
       };
-      if (num > UINT8_MAX) {
+      if (num > MIN(UINT8_MAX, max_color)) {
+        fputs("Color outside acceptable range", stderr);
         goto error;
       }
       if (*num_end != '\0') {
