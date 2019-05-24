@@ -340,7 +340,7 @@ static bool parse_style(const char *input, struct style *style) {
     if ((next = peek_char(next, '\0'))) {
       return true;
     } else {
-      fputs("Expected eof\n", stderr);
+      fputs("Expected end of style\n", stderr);
     }
   } else {
     fputs("Expected style\n", stderr);
