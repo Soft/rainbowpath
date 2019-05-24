@@ -5,22 +5,28 @@ jobs:
     - stage: test
       script:
         - ./autogen.sh
-        - ./configure
+        - ./configure --without-curses
         - make
-        - ./rainbowpath
+        - ./src/rainbowpath
     - stage: binary
+      services:
+        - docker
       before_install:
-        - sudo apt-get update
-        - sudo apt-get install -y musl-tools
+        - mkdir rainbowpath-${TRAVIS_TAG:-untagged}
+        - docker pull soft/rainbowpath-builder
+        - docker run -it -d --name builder -v $(pwd):/home/builder/work soft/rainbowpath-builder sh
       script:
-        - ./autogen.sh
-        - CC=musl-gcc CFLAGS="-static -O2" ./configure
-        - make
-        - strip rainbowpath
+        - docker exec builder autoreconf -vfi
+        - docker exec builder sh -c "CFLAGS='-static -O2' PKG_CONFIG='pkg-config --static' ./configure --with-curses"
+        - docker exec builder make
+        - docker cp builder:/home/builder/work/src/rainbowpath rainbowpath-${TRAVIS_TAG:-untagged}/rainbowpath
+        - strip rainbowpath-${TRAVIS_TAG:-untagged}/rainbowpath
+        - cp LICENSE README.md rainbowpath-${TRAVIS_TAG:-untagged}
+        - tar -cvzf rainbowpath.tar.gz rainbowpath-${TRAVIS_TAG:-untagged}
       deploy:
         provider: releases
         api_key: $GITHUB_OAUTH_TOKEN
-        file: rainbowpath
+        file: rainbowpath.tar.gz
         skip_cleanup: true
         on:
           tags: true

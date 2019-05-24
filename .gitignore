@@ -6,6 +6,7 @@ Makefile.in
 aclocal.m4
 autom4te.cache/*
 compile
+compile_commands.json
 config.h
 config.h.in
 config.log
@@ -15,4 +16,5 @@ depcomp
 install-sh
 missing
 rainbowpath
+src/.deps/*
 stamp-*
