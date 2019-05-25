@@ -13,6 +13,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <time.h>
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 #define MIN(a, b) ((a) <= (b) ? (a) : (b))
@@ -31,6 +32,13 @@ struct style {
   bool underlined;
   bool blink;
 };
+
+typedef size_t (*indexer)(
+  size_t palette_size,
+  size_t ind,
+  const char *start,
+  const char *end
+);
 
 static const struct style PATH_SEP_STYLE_8 = {
   .fg = { .set = true, .color = 7 },
@@ -64,25 +72,22 @@ static const size_t INITIAL_PALETTE_SIZE = 32;
 static const size_t INITIAL_PATH_SIZE = 512;
 
 static const char *USAGE =
-    "Usage: " PACKAGE_NAME
-    " [-p PALETTE] [-s STYLE] [-S SEPARATOR] [-l] [-c] [-n] [-b] [-h] [-v] "
-    "[PATH]\n"
+    "Usage: " PACKAGE_NAME " [-p PALETTE] [-s STYLE] [-S SEPARATOR] [-m METHOD]\n"
+    "                   [-l] [-c] [-n] [-b] [-h] [-v] [PATH]\n\n"
     "Color path components using a palette.\n\n"
     "Options:\n"
-    "  -p, --palette=PALETTE             Semicolon-separated list of styles "
-    "for\n"
+    "  -p, --palette=PALETTE             Semicolon-separated list of styles for\n"
     "                                    path components\n"
     "  -s, --separator=STYLE             Style for path separators\n"
-    "  -S, --separator-string=SEPARATOR  String used to separate path "
-    "components\n"
+    "  -S, --separator-string=SEPARATOR  String used to separate path components\n"
     "                                    in the output (defaults to '/')\n"
-    "  -l, --leading                     Do not display leading path "
-    "separator\n"
-    "  -c, --compact                     Replace home directory path prefix "
-    "with ~\n"
+    "  -m, --method=METHOD               Method for selecting styles from palette.\n"
+    "                                    One of sequential, hash, random\n"
+    "                                    (defaults to sequential).\n"
+    "  -l, --leading                     Do not display leading path separator\n"
+    "  -c, --compact                     Replace home directory path prefix with ~\n"
     "  -n, --newline                     Do not append newline\n"
-    "  -b, --bash                        Escape control codes for use in Bash "
-    "prompts\n"
+    "  -b, --bash                        Escape control codes for use in Bash prompts\n"
     "  -h, --help                        Display this help\n"
     "  -v, --version                     Display version information\n";
 
@@ -178,21 +183,52 @@ static char *compact_path(const char *path) {
   return check(strdup(path));
 }
 
-static void print_path(const char *path,
+static size_t index_sequential(size_t palette_size,
+                               size_t ind,
+                               const char *start,
+                               const char *end) {
+  return ind % palette_size;
+}
+
+static size_t index_hash(size_t palette_size,
+                         size_t ind,
+                         const char *start,
+                         const char *end) {
+  size_t hash = 5381;
+  for (const char *c = start; c < end; c++) {
+    hash = ((hash << 5) + hash) + (size_t)*c;
+  }
+  return hash % palette_size;
+}
+
+static size_t index_random(size_t palette_size,
+                           size_t ind,
+                           const char *start,
+                           const char *end) {
+  #ifdef HAVE_DRAND48
+  return drand48() * palette_size;
+  #else
+  return rand() % palette_size;
+  #endif
+}
+
+static void print_path(indexer indexer,
+                       const char *path,
                        const char *separator,
                        const struct style *sep_style,
                        const struct style *palette,
-                       const size_t palette_size,
+                       size_t palette_size,
                        bool skip_leading,
                        bool bash_escape) {
   const char *rest = path, *ptr;
-  size_t ind = 0;
+  size_t ind = 0, selected;
   if (skip_leading && *rest == '/') {
     rest++;
   }
   while ((ptr = strchr(rest, '/'))) {
     if (ptr != rest) {
-      begin_style(&palette[ind % palette_size], bash_escape);
+      selected = indexer(palette_size, ind, rest, ptr);
+      begin_style(&palette[selected], bash_escape);
       fwrite(rest, 1, ptr - rest, stdout);
       end_style(bash_escape);
       ind++;
@@ -202,7 +238,8 @@ static void print_path(const char *path,
     end_style(bash_escape);
     rest = ptr + 1;
   }
-  begin_style(&palette[ind % palette_size], bash_escape);
+  selected = indexer(palette_size, ind, rest, rest + strlen(rest));
+  begin_style(&palette[selected], bash_escape);
   fputs(rest, stdout);
   end_style(bash_escape);
 }
@@ -387,9 +424,9 @@ error:
   return 0;
 }
 
-void select_palette(const struct style **palette,
-                    size_t *palette_size,
-                    struct style *path_sep) {
+static void select_palette(const struct style **palette,
+                           size_t *palette_size,
+                           struct style *path_sep) {
   if (get_color_count() >= 256) {
     *palette_size = ARRAY_SIZE(PALETTE_256);
     *palette = PALETTE_256;
@@ -399,6 +436,17 @@ void select_palette(const struct style **palette,
     *palette = PALETTE_8;
     *path_sep = PATH_SEP_STYLE_8;
   }
+}
+
+static indexer select_indexer(const char *name) {
+  if (!strcmp(name, "sequential")) {
+    return index_sequential;
+  } else if (!strcmp(name, "hash")) {
+    return index_hash;
+  } else if (!strcmp(name, "random")) {
+    return index_random;
+  }
+  return NULL;
 }
 
 static inline void usage(void) {
@@ -419,10 +467,17 @@ int main(int argc, char *argv[]) {
   char *compacted = NULL;
   char *selected;
   char *separator = "/";
+  indexer indexer = index_sequential;
   size_t palette_size;
   struct style path_sep;
   const struct style *default_palette;
   struct style *palette = NULL;
+
+  #ifdef HAVE_DRAND48
+  srand48(time(NULL));
+  #else
+  srand(time(NULL));
+  #endif
 
   if (!setup_terminal()) {
     ret = EXIT_FAILURE;
@@ -435,6 +490,7 @@ int main(int argc, char *argv[]) {
       { "palette", required_argument, NULL, 'p' },
       { "separator", required_argument, NULL, 's' },
       { "separator-string", required_argument, NULL, 'S' },
+      { "method", required_argument, NULL, 'm' },
       { "leading", no_argument, NULL, 'l' },
       { "compact", no_argument, NULL, 'c' },
       { "newline", no_argument, NULL, 'n' },
@@ -444,7 +500,7 @@ int main(int argc, char *argv[]) {
       { 0 }
   };
 
-  while ((arg = getopt_long(argc, argv, "p:s:S:lcnbhv", options, NULL)) != -1) {
+  while ((arg = getopt_long(argc, argv, "p:s:S:m:lcnbhv", options, NULL)) != -1) {
     switch (arg) {
       case 'p':
         if ((palette_size = parse_palette(optarg, &palette)) == 0) {
@@ -462,6 +518,14 @@ int main(int argc, char *argv[]) {
         break;
       case 'S':
         separator = optarg;
+        break;
+      case 'm':
+        indexer = select_indexer(optarg);
+        if (!indexer) {
+          fputs("Invalid indexing method\n", stderr);
+          ret = EXIT_FAILURE;
+          goto out;
+        }
         break;
       case 'l':
         skip_leading = true;
@@ -511,7 +575,8 @@ int main(int argc, char *argv[]) {
     selected = path ? path : argv[optind];
   }
 
-  print_path(selected,
+  print_path(indexer,
+             selected,
              separator,
              &path_sep,
              palette ? palette : default_palette,

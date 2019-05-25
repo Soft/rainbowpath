@@ -8,14 +8,13 @@ rainbowpath \- Color path components using a palette.
 .SH SYNOPSIS
 
 .B rainbowpath
-[\fB\-p\fR \fIPALETTE\fR] [\fB\-s\fR \fISTYLE\fR] [\fB\-S\fR \fISEPARATOR\fR] [\fB\-l\fR] [\fB\-c\fR] [\fB\-n\fR] [\fB\-b\fR] [\fB\-h\fR] [\fB\-v\fR] [\fIPATH\fR]
+[\fB\-p\fR \fIPALETTE\fR] [\fB\-s\fR \fISTYLE\fR] [\fB\-S\fR \fISEPARATOR\fR] [\fB\-m\fR \fIMETHOD\fR] [\fB\-l\fR] [\fB\-c\fR] [\fB\-n\fR] [\fB\-b\fR] [\fB\-h\fR] [\fB\-v\fR] [\fIPATH\fR]
 
 \fBrainbowpath\fR formats supplied path by coloring each path component with a
-color selected from a palette. Colors for path components are selected based on
-the order they appear in the palette. If no palette is supplied a default one
-will be used. \fBrainbowpath\fR should work on any modern terminal emulator that
-supports 256 colors. When invoked without a path \fBrainbowpath\fR displays the
-current working directory.
+color selected from a palette. By default, colors for path components are
+selected based on the order they appear in the palette. If no palette is
+supplied a default one will be used. When invoked without a path
+\fBrainbowpath\fR displays the current working directory.
 
 .SH OPTIONS
 
@@ -30,6 +29,15 @@ Style for path separators.
 .TP
 .BI \-S " SEPARATOR\fR,\fP " \-\-separator\-string " SEPARATOR"
 String used to separate path components in the output (defaults to '\fI/\fR').
+
+.TP
+.BI \-m " METHOD\fR,\fP " \-\-method " METHOD"
+
+Method for selecting styles from palette. One of \fIsequential\fR, \fIhash\fR,
+\fIrandom\fR (defaults to \fIsequential\fR). \fIsequential\fR mode selects
+styles based on the order they appear in the palette. \fIhash\fR mode selects
+styles based on the contents of path segment being processed. \fIrandom\fR mode
+selects styles randomly from the palette.
 
 .TP
 .BR \-l ", " \-\-leading

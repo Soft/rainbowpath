@@ -11,11 +11,10 @@ shell prompts:
 <img src="https://raw.githubusercontent.com/Soft/rainbowpath/master/extra/screenshot.png">
 
 `rainbowpath` formats supplied path by coloring each path component with a color
-selected from a palette. Colors for path components are selected based on the
-order they appear in the palette. If no palette is supplied a default one will
-be used. `rainbowpath` should work on any modern terminal emulator that supports
-256 colors. When invoked without a path `rainbowpath` displays the current
-working directory.
+selected from a palette. By default, colors for path components are selected
+based on the order they appear in the palette. If no palette is supplied a
+default one will be used. When invoked without a path `rainbowpath` displays the
+current working directory.
 
 ### Installation
 
@@ -35,7 +34,9 @@ make
 ### Usage
 
 ```
-Usage: rainbowpath [-p PALETTE] [-s STYLE] [-S SEPARATOR] [-l] [-c] [-n] [-b] [-h] [-v] [PATH]
+Usage: rainbowpath [-p PALETTE] [-s STYLE] [-S SEPARATOR] [-m METHOD]
+                   [-l] [-c] [-n] [-b] [-h] [-v] [PATH]
+
 Color path components using a palette.
 
 Options:
@@ -44,6 +45,9 @@ Options:
   -s, --separator=STYLE             Style for path separators
   -S, --separator-string=SEPARATOR  String used to separate path components
                                     in the output (defaults to '/')
+  -m, --method=METHOD               Method for selecting styles from palette.
+                                    One of sequential, hash, random
+                                    (defaults to sequential).
   -l, --leading                     Do not display leading path separator
   -c, --compact                     Replace home directory path prefix with ~
   -n, --newline                     Do not append newline
