@@ -7,7 +7,8 @@ AC_PROG_CC
 AC_PROG_CC_C99
 AC_HEADER_STDBOOL
 AC_TYPE_UINT8_T
-
+AC_CHECK_FUNC([drand48],
+  [AC_DEFINE([HAVE_DRAND48], [1], [Use drand48])])
 
 AC_ARG_WITH([curses],
   [AS_HELP_STRING([--with-curses],
