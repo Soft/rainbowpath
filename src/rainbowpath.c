@@ -15,6 +15,10 @@
 #include <unistd.h>
 #include <time.h>
 
+#ifdef HAVE_GETRANDOM
+#include <sys/random.h>
+#endif
+
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 #define MIN(a, b) ((a) <= (b) ? (a) : (b))
 #define MAX(a, b) ((a) >= (b) ? (a) : (b))
@@ -449,6 +453,28 @@ static indexer select_indexer(const char *name) {
   return NULL;
 }
 
+static void setup_random(void) {
+#ifdef HAVE_DRAND48
+  #define INIT_FUNC srand48
+  #define SEED_TYPE long int
+#else
+  #define INIT_FUNC srand
+  #define SEED_TYPE unsigned int
+#endif
+#ifdef HAVE_GETRANDOM
+  char seed[sizeof(SEED_TYPE)] = {0};
+  if (getrandom(&seed[0], sizeof(seed), 0) == sizeof(seed)) {
+    INIT_FUNC(*(SEED_TYPE *)&seed[0]);
+  } else {
+    INIT_FUNC(time(NULL));
+  }
+#else
+  INIT_FUNC(time(NULL));
+#endif
+#undef INIT_FUNC
+#undef SEED_TYPE
+}
+
 static inline void usage(void) {
   fputs(USAGE, stderr);
 }
@@ -473,11 +499,7 @@ int main(int argc, char *argv[]) {
   const struct style *default_palette;
   struct style *palette = NULL;
 
-  #ifdef HAVE_DRAND48
-  srand48(time(NULL));
-  #else
-  srand(time(NULL));
-  #endif
+  setup_random();
 
   if (!setup_terminal()) {
     ret = EXIT_FAILURE;
