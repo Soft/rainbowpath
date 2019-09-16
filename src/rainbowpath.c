@@ -462,9 +462,11 @@ static void setup_random(void) {
   #define SEED_TYPE unsigned int
 #endif
 #ifdef HAVE_GETRANDOM
-  char seed[sizeof(SEED_TYPE)] = {0};
-  if (getrandom(&seed[0], sizeof(seed), 0) == sizeof(seed)) {
-    INIT_FUNC(*(SEED_TYPE *)&seed[0]);
+  char seed_buf[sizeof(SEED_TYPE)] = {0};
+  SEED_TYPE seed = 0;
+  if (getrandom(seed_buf, sizeof(seed_buf), 0) == sizeof(seed_buf)) {
+    memcpy(&seed, seed_buf, sizeof(seed));
+    INIT_FUNC(seed);
   } else {
     INIT_FUNC(time(NULL));
   }
