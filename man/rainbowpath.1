@@ -1,5 +1,5 @@
 '\" t
-.TH RAINBOWPATH 1 2018-2019
+.TH RAINBOWPATH 1 2018-2020
 
 .SH NAME
 
@@ -8,26 +8,26 @@ rainbowpath \- Color path components using a palette.
 .SH SYNOPSIS
 
 .B rainbowpath
-[\fB\-p\fR \fIPALETTE\fR] [\fB\-s\fR \fISTYLE\fR] [\fB\-S\fR \fISEPARATOR\fR] [\fB\-m\fR \fIMETHOD\fR] [\fB\-l\fR] [\fB\-c\fR] [\fB\-n\fR] [\fB\-b\fR] [\fB\-h\fR] [\fB\-v\fR] [\fIPATH\fR]
+[\fB\-p\fR \fIPALETTE\fR] [\fB\-s\fR \fIPALETTE\fR] [\fB\-S\fR \fISEPARATOR\fR] [\fB\-m\fR \fIMETHOD\fR] [\fB\-M\fR \fIMETHOD\fR] [\fB\-o\fR \fIINDEX\fR \fISTYLE\fR] [\fB\-O\fR \fIINDEX\fR \fISTYLE\fR] [\fB\-l\fR] [\fB\-c\fR] [\fB\-n\fR] [\fB\-b\fR] [\fB\-h\fR] [\fB\-v\fR] [\fIPATH\fR]
 
 \fBrainbowpath\fR formats supplied path by coloring each path component with a
 color selected from a palette. By default, colors for path components are
 selected based on the order they appear in the palette. If no palette is
 supplied a default one will be used. When invoked without a path
-\fBrainbowpath\fR displays the current working directory.
+\fBrainbowpath\fR colors the path of the current working directory.
 
 .SH OPTIONS
 
 .TP
 .BI \-p " PALETTE\fR,\fP " \-\-palette " PALETTE"
-Semicolon-separated list of styles for path components.
+Semicolon separated list of styles for path components.
 
 .TP
-.BI \-s " STYLE\fR,\fP " \-\-separator " STYLE"
-Style for path separators.
+.BI \-s " PALETTE\fR,\fP " \-\-separator\-palette " PALETTE"
+Semicolon separated list of styles for path separators.
 
 .TP
-.BI \-S " SEPARATOR\fR,\fP " \-\-separator\-string " SEPARATOR"
+.BI \-S " SEPARATOR\fR,\fP " \-\-separator " SEPARATOR"
 String used to separate path components in the output (defaults to '\fI/\fR').
 
 .TP
@@ -38,6 +38,24 @@ Method for selecting styles from palette. One of \fIsequential\fR, \fIhash\fR,
 styles based on the order they appear in the palette. \fIhash\fR mode selects
 styles based on the contents of path segment being processed. \fIrandom\fR mode
 selects styles randomly from the palette.
+
+.TP
+.BI \-M " METHOD\fR,\fP " \-\-separator\-method " METHOD"
+
+Method for selecting styles from separator palette. See \fB\-\-method\fR for
+further details.
+
+.TP
+.BI \-o " INDEX STYLE\fR,\fP " \-\-override " INDEX STYLE"
+
+Override style at the given index. This option can appear multiple times. See
+\fBSTYLE OVERRIDES\fR for further details.
+
+.TP
+.BI \-O " INDEX STYLE\fR,\fP " \-\-separator\-override " INDEX STYLE"
+
+Override separator style at given the index. This option can appear multiple
+times. See \fBSTYLE OVERRIDES\fR for further details.
 
 .TP
 .BR \-l ", " \-\-leading
@@ -66,8 +84,8 @@ Display version information.
 .SH STYLES
 
 Styles specify how path components should look. \fB\-\-palette\fR and
-\fB\-\-separator\fR options accept styles as arguments. Style consists of a list
-of properties separated by commas. The possible properties are:
+\fB\-\-separator\-palette\fR options accept styles as arguments. Style consists
+of a list of properties separated by commas. The possible properties are:
 
 .RS
 .TS
@@ -83,14 +101,54 @@ blink	Blinking text
 .TE
 .RE
 
-Where \fICOLOR\fR is an integer between \fI0\fR and \fI255\fR.
+Where \fICOLOR\fR is an integer between \fI0\fR and \fI255\fR or one of:
+\fIblack\fR, \fIred\fR, \fIgreen\fR, \fIyellow\fR, \fIblue\fR, \fImagenta\fR,
+\fIcyan\fR, \fIwhite\fR.
 
-For example, the following invocation will display the current working
-directory's path altering path components' styles between underlined green
-(\fI2\fR) and bold yellow (\fI3\fR) on magenta (\fI5\fR) background:
+For example, the following invocation will display the path of the current
+working directory altering styles of path components between underlined green
+text and bold yellow text on magenta background:
 
 .nf
-rainbowpath --palette 'fg=2,underlined;fg=3,bg=5,bold'
+rainbowpath --palette 'fg=green,underlined;fg=yellow,bg=magenta,bold'
+.fi
+
+.SH STYLE OVERRIDES
+
+\fB\-\-override\fR and \fB\-\-separator-override\fR options make it possible to
+selectively override the style of particular path component at a specific index.
+
+For example, the following command displays all the directory components of the
+path as blue, except the first one (index \fI0\fR `this') which will be
+displayed as yellow.
+
+.nf
+rainbowpath -p 'fg=blue' -o 0 'fg=yellow' '/this/is/an/example/'
+.fi
+
+Component indexes can also be negative, in which case they start at the end of
+the list of path components. For example, the following command will print
+`example' as yellow.
+
+.nf
+rainbowpath -p 'fg=blue' -o -1 'fg=yellow' '/this/is/an/example/'
+.fi
+
+Override styles are merged with the base style from the palette. For example,
+the following command will display example in blue bold font.
+
+.nf
+rainbowpath -p 'fg=blue' -o -1 'bold' '/this/is/an/example/'
+.fi
+
+Override styles are also able to revert style properties set by the base style.
+This can be achieved by prefixing the property name with a \fI!\fR.
+
+For example, the following command will print all path components in bold yellow
+font, except the last one which will be printed in the regular font:
+
+.nf
+rainbowpath -p 'fg=yellow,bold' -o -1 '!fg,!bold' '/this/is/an/example/'
 .fi
 
 .SH AUTHORS
