@@ -34,26 +34,35 @@ make
 ### Usage
 
 ```
-Usage: rainbowpath [-p PALETTE] [-s STYLE] [-S SEPARATOR] [-m METHOD]
+Usage: rainbowpath [-p PALETTE] [-s PALETTE] [-S SEPARATOR] [-m METHOD]
+                   [-M METHOD] [-o INDEX STYLE] [-O INDEX STYLE]
                    [-l] [-c] [-n] [-b] [-h] [-v] [PATH]
 
 Color path components using a palette.
 
 Options:
-  -p, --palette=PALETTE             Semicolon-separated list of styles for
-                                    path components
-  -s, --separator=STYLE             Style for path separators
-  -S, --separator-string=SEPARATOR  String used to separate path components
-                                    in the output (defaults to '/')
-  -m, --method=METHOD               Method for selecting styles from palette.
-                                    One of sequential, hash, random
-                                    (defaults to sequential).
-  -l, --leading                     Do not display leading path separator
-  -c, --compact                     Replace home directory path prefix with ~
-  -n, --newline                     Do not append newline
-  -b, --bash                        Escape control codes for use in Bash prompts
-  -h, --help                        Display this help
-  -v, --version                     Display version information
+  -p, --palette PALETTE                 Semicolon separated list of styles for
+                                        path components
+  -s, --separator-palette PALETTE       Semicolon separated list of styles for
+                                        path separators.
+  -S, --separator SEPARATOR             String used to separate path components
+                                        in the output (defaults to '/')
+  -m, --method METHOD                   Method for selecting styles from palette.
+                                        One of sequential, hash, random
+                                        (defaults to sequential).
+  -M, --separator-method METHOD         Method for selecting styles from separator
+                                        palette. One of sequential, hash, random
+                                        (defaults to sequential).
+  -o, --override INDEX STYLE            Override style at the given index. This option
+                                        can appear multiple times.
+  -O, --separator-override INDEX STYLE  Override separator style at the given index.
+                                        This option can appear multiple times.
+  -l, --leading                         Do not display leading path separator
+  -c, --compact                         Replace home directory path prefix with ~
+  -n, --newline                         Do not append newline
+  -b, --bash                            Escape control codes for use in Bash prompts
+  -h, --help                            Display this help
+  -v, --version                         Display version information
 ```
 
 ### Use in a Bash prompt
@@ -90,13 +99,51 @@ separated by commas. The possible properties are:
 | `underlined` | Underlined text                 |
 | `blink`      | Blinking text                   |
 
-Where `COLOR` is an integer between 0 and 255.
+Where `COLOR` is an integer between 0 and 255 or one of: `black`, `red`,
+`green`, `yellow`, `blue`, `magenta`, `cyan`, `white`.
 
-For example, the following invocation will display the current working
-directory's path altering path components' styles between underlined green (2)
-and bold yellow (3) on magenta (5) background:
+For example, the following invocation will display the path of the current
+working directory altering styles of path components between underlined green
+text and bold yellow text on magenta background:
 
 ``` shell
-rainbowpath --palette 'fg=2,underlined;fg=3,bg=5,bold'
+rainbowpath --palette 'fg=green,underlined;fg=yellow,bg=magenta,bold'
 ```
 
+### Style Overrides
+
+`--override` and `--separator-override` options make it possible to selectively
+override the style of particular path component at a specific index.
+
+For example, the following command displays all the directory components of the
+path as blue, except the first one (index `0` "this") which will be displayed as
+yellow.
+
+``` shell
+rainbowpath -p 'fg=blue' -o 0 'fg=yellow' '/this/is/an/example/'
+```
+
+Component indexes can also be negative, in which case they start at the end of
+the list of path components. For example, the following command will print
+"example" as yellow.
+
+``` shell
+rainbowpath -p 'fg=blue' -o -1 'fg=yellow' '/this/is/an/example/'
+```
+
+Override styles are merged with the base style from the palette. For example,
+the following command will display example in blue bold font.
+
+``` shell
+rainbowpath -p 'fg=blue' -o -1 'bold' '/this/is/an/example/'
+```
+
+Override styles are also able to revert style properties set by the base style.
+This can be achieved by prefixing the property name with a `!`.
+
+For example, the following command will print all path components in bold yellow
+font, except the last one which will be printed in the regular font:
+
+``` shell
+rainbowpath -p 'fg=yellow,bold' -o -1 '!fg,!bold' '/this/is/an/example/'
+```
