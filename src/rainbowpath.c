@@ -4,7 +4,6 @@
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
-#include <getopt.h>
 #include <pwd.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -37,21 +36,44 @@ struct style {
   bool blink;
 };
 
-typedef size_t (*indexer)(
+struct palette {
+  struct style *styles;
+  size_t size;
+};
+
+typedef size_t (*indexer_t)(
   size_t palette_size,
   size_t ind,
   const char *start,
   const char *end
 );
 
-static const struct style PATH_SEP_PALETTE_8[] = {
+struct config {
+  char *path;
+  char *separator;
+  struct palette *path_palette;
+  struct palette *separator_palette;
+  bool new_line;
+  bool bash_escape;
+  bool compact;
+  bool skip_leading;
+  indexer_t path_indexer;
+  indexer_t separator_indexer;
+};
+
+static struct style SEPARATOR_STYLES_8[] = {
   {
     .fg = { .set = true, .color = 7 },
     .dim = true
   }
 };
 
-static const struct style PALETTE_8[] = {
+static struct palette SEPARATOR_PALETTE_8 = {
+  .styles = SEPARATOR_STYLES_8,
+  .size = ARRAY_SIZE(SEPARATOR_STYLES_8),
+};
+
+static struct style PATH_STYLES_8[] = {
   { .fg = { .set = true, .color = 1 } },
   { .fg = { .set = true, .color = 3 } },
   { .fg = { .set = true, .color = 2 } },
@@ -60,40 +82,55 @@ static const struct style PALETTE_8[] = {
   { .fg = { .set = true, .color = 5 } }
 };
 
-static const struct style PATH_SEP_PALETTE_256[] = {
+static struct palette PATH_PALETTE_8 = {
+  .styles = PATH_STYLES_8,
+  .size = ARRAY_SIZE(PATH_STYLES_8),
+};
+
+static struct style SEPARATOR_STYLES_256[] = {
   {
     .fg = { .set = true, .color = 239 },
-    .bold = true
+    .bold = true,
   }
 };
 
-static const struct style PALETTE_256[] = {
+static struct palette SEPARATOR_PALETTE_256 = {
+  .styles = SEPARATOR_STYLES_256,
+  .size = ARRAY_SIZE(SEPARATOR_STYLES_256),
+};
+
+static struct style PATH_STYLES_256[] = {
   { .fg = {.set = true, .color = 160 } },
   { .fg = {.set = true, .color = 208 } },
   { .fg = {.set = true, .color = 220 } },
   { .fg = {.set = true, .color = 82 } },
   { .fg = {.set = true, .color = 39 } },
-  { .fg = {.set = true, .color = 63 } }
+  { .fg = {.set = true, .color = 63 } },
+};
+
+static struct palette PATH_PALETTE_256 = {
+  .styles = PATH_STYLES_256,
+  .size = ARRAY_SIZE(PATH_STYLES_256),
 };
 
 static const size_t INITIAL_PALETTE_SIZE = 32;
 static const size_t INITIAL_PATH_SIZE = 512;
 
 static const char *USAGE =
-    "Usage: " PACKAGE_NAME " [-p PALETTE] [-s STYLE] [-S SEPARATOR] [-m METHOD]\n"
+    "Usage: " PACKAGE_NAME " [-p PALETTE] [-s PALETTE] [-S SEPARATOR] [-m METHOD]\n"
     "                   [-M METHOD] [-l] [-c] [-n] [-b] [-h] [-v] [PATH]\n\n"
     "Color path components using a palette.\n\n"
     "Options:\n"
-    "  -p, --palette=PALETTE             Semicolon separated list of styles for\n"
+    "  -p, --path-palette PALETTE        Semicolon separated list of styles for\n"
     "                                    path components\n"
-    "  -s, --separator=PALETTE           Semicolon separated list of styles for\n"
+    "  -s, --separator-palette PALETTE   Semicolon separated list of styles for\n"
     "                                    path separators.\n"
-    "  -S, --separator-string=SEPARATOR  String used to separate path components\n"
+    "  -S, --separator SEPARATOR         String used to separate path components\n"
     "                                    in the output (defaults to '/')\n"
-    "  -m, --method=METHOD               Method for selecting styles from palette.\n"
+    "  -m, --path-method METHOD          Method for selecting styles from palette.\n"
     "                                    One of sequential, hash, random\n"
     "                                    (defaults to sequential).\n"
-    "  -M, --separator-method=METHOD     Method for selecting separator styles from\n"
+    "  -M, --separator-method METHOD     Method for selecting separator styles from\n"
     "                                    palette. One of sequential, hash, random\n"
     "                                    (defaults to sequential).\n"
     "  -l, --leading                     Do not display leading path separator\n"
@@ -146,6 +183,13 @@ static inline void end_style(bool bash_escape) {
   if (bash_escape) {
     fputs("\\]", stdout);
   }
+}
+
+static void palette_free(struct palette *palette) {
+  if (palette->styles) {
+    free(palette->styles);
+  }
+  free(palette);
 }
 
 static char *get_working_directory(void) {
@@ -224,37 +268,44 @@ static size_t index_random(size_t palette_size,
   #endif
 }
 
-static void print_path(indexer path_indexer,
-                       indexer separator_indexer,
-                       const char *path,
+static void print_path(const char *path,
                        const char *separator,
-                       const struct style *path_sep_palette,
-                       size_t path_sep_palette_size,
-                       const struct style *palette,
-                       size_t palette_size,
+                       const struct palette *path_palette,
+                       const struct palette *separator_palette,
                        bool skip_leading,
-                       bool bash_escape) {
-  const char *rest = path, *ptr;
-  size_t ind = 0, selected;
+                       bool bash_escape,
+                       indexer_t path_indexer,
+                       indexer_t separator_indexer) {
+  const char *rest = path;
+  const char *ptr;
+  size_t path_ind = 0;
+  size_t sep_ind = 0;
+  size_t selected;
+
   if (skip_leading && *rest == '/') {
     rest++;
   }
+
   while ((ptr = strchr(rest, '/'))) {
     if (ptr != rest) {
-      selected = path_indexer(palette_size, ind, rest, ptr);
-      begin_style(&palette[selected], bash_escape);
+      selected = path_indexer(path_palette->size, path_ind, rest, ptr);
+      begin_style(&path_palette->styles[selected], bash_escape);
       fwrite(rest, 1, ptr - rest, stdout);
       end_style(bash_escape);
+      path_ind++;
     }
-    selected = separator_indexer(path_sep_palette_size, ind, ptr, ptr + 1);
-    begin_style(&path_sep_palette[selected], bash_escape);
+
+    selected = separator_indexer(separator_palette->size, sep_ind, ptr, ptr + 1);
+    begin_style(&separator_palette->styles[selected], bash_escape);
     fputs(separator, stdout);
     end_style(bash_escape);
+    sep_ind++;
+
     rest = ptr + 1;
-    ind++;
   }
-  selected = path_indexer(palette_size, ind, rest, rest + strlen(rest));
-  begin_style(&palette[selected], bash_escape);
+
+  selected = path_indexer(path_palette->size, path_ind, rest, rest + strlen(rest));
+  begin_style(&path_palette->styles[selected], bash_escape);
   fputs(rest, stdout);
   end_style(bash_escape);
 }
@@ -386,13 +437,16 @@ error:
   return NULL;
 }
 
-static size_t parse_palette(const char *input, struct style **result) {
-  const char *current = input, *next;
-  size_t palette_size = INITIAL_PALETTE_SIZE, pos = 0;
-  struct style *palette = check(calloc(palette_size, sizeof(*palette)));
+static struct palette *parse_palette(const char *input) {
+  const char *current = input;
+  const char *next;
+  size_t palette_size = INITIAL_PALETTE_SIZE;
+  size_t pos = 0;
+  struct palette *palette = check(malloc(sizeof(*palette)));
+  struct style *styles = check(calloc(palette_size, sizeof(*styles)));
 
   while (true) {
-    if ((next = parse_style_inner(current, &palette[pos]))) {
+    if ((next = parse_style_inner(current, &styles[pos]))) {
       current = next;
     } else {
       fputs("Expected a style definition\n", stderr);
@@ -404,9 +458,9 @@ static size_t parse_palette(const char *input, struct style **result) {
       pos++;
       if (pos >= palette_size) {
         palette_size *= 2;
-        palette = check(realloc(palette, sizeof(*palette) * palette_size));
+        styles = check(realloc(styles, sizeof(*styles) * palette_size));
       }
-      memset(&palette[pos], 0, sizeof(struct style));
+      memset(&styles[pos], 0, sizeof(struct style));
     } else if ((next = peek_char(current, '\0'))) {
       current = next;
       break;
@@ -416,33 +470,20 @@ static size_t parse_palette(const char *input, struct style **result) {
     }
   }
 
-  *result = palette;
-  return pos + 1;
+  palette->styles = styles;
+  palette->size = pos + 1;
+  return palette;
 error:
   if (palette) {
     free(palette);
   }
-  return 0;
-}
-
-static void select_palette(const struct style **palette,
-                           size_t *palette_size,
-                           const struct style **path_sep_palette,
-                           size_t *path_sep_palette_size) {
-  if (get_color_count() >= 256) {
-    *palette = PALETTE_256;
-    *palette_size = ARRAY_SIZE(PALETTE_256);
-    *path_sep_palette = PATH_SEP_PALETTE_256;
-    *path_sep_palette_size = ARRAY_SIZE(PATH_SEP_PALETTE_256);
-  } else {
-    *palette = PALETTE_8;
-    *palette_size = ARRAY_SIZE(PALETTE_8);
-    *path_sep_palette = PATH_SEP_PALETTE_8;
-    *path_sep_palette_size = ARRAY_SIZE(PATH_SEP_PALETTE_256);
+  if (styles) {
+    free(styles);
   }
+  return NULL;
 }
 
-static indexer select_indexer(const char *name) {
+static indexer_t select_indexer(const char *name) {
   if (!strcmp(name, "sequential")) {
     return index_sequential;
   } else if (!strcmp(name, "hash")) {
@@ -477,32 +518,142 @@ static void setup_random(void) {
 #undef SEED_TYPE
 }
 
-static inline void usage(void) {
+static void usage(void) {
   fputs(USAGE, stderr);
 }
 
-static inline void version(void) {
+static void version(void) {
   fputs(PACKAGE_STRING "\n", stderr);
 }
 
-int main(int argc, char *argv[]) {
-  int arg, ret = EXIT_SUCCESS;
-  bool new_line = true;
-  bool bash_escape = false;
-  bool compact = false;
-  bool skip_leading = false;
-  char *path = NULL;
-  char *compacted = NULL;
-  char *selected;
-  char *separator = "/";
-  indexer path_indexer = index_sequential;
-  indexer separator_indexer = index_sequential;
+static bool consume_argument(char ***arg, char **arg_end) {
+  const char *flag = **arg;
+  if (++*arg >= arg_end) {
+    fprintf(stderr, "Invalid usage: %s requires an argument\n", flag);
+    return false;
+  }
+  return true;
+}
+
+static bool parse_args(int argc,
+                       char **argv,
+                       struct config *config,
+                       bool *error) {
+  char **arg = argv + 1;
+  char **arg_end = argv + argc;
   size_t palette_size;
-  size_t path_sep_palette_size;
-  const struct style *default_palette;
-  const struct style *default_path_sep_palette;
-  struct style *palette = NULL;
-  struct style *path_sep_palette = NULL;
+  struct palette *palette;
+  indexer_t indexer;
+
+  *error = false;
+  for (; arg < arg_end; arg++) {
+    const char *flag = *arg;
+    if (!strcmp("--path-palette", flag) || !strcmp("-p", flag)) {
+      if (!consume_argument(&arg, arg_end)) {
+        goto error;
+      }
+      palette = parse_palette(*arg);
+      if (!palette) {
+        fputs("Invalid palette\n", stderr);
+        goto error;
+      }
+      config->path_palette = palette;
+    } else if (!strcmp("--separator-palette", flag) || !strcmp("-s", flag)) {
+      if (!consume_argument(&arg, arg_end)) {
+        goto error;
+      }
+      palette = parse_palette(*arg);
+      if (!palette) {
+        fputs("Invalid separator palette\n", stderr);
+        goto error;
+      }
+      config->separator_palette = palette;
+    } else if (!strcmp("--separator", flag) || !strcmp("-S", flag)) {
+      if (!consume_argument(&arg, arg_end)) {
+        goto error;
+      }
+      config->separator = *arg;
+    } else if (!strcmp("--path-method", flag) || !strcmp("-m", flag)) {
+      if (!consume_argument(&arg, arg_end)) {
+        goto error;
+      }
+      indexer = select_indexer(*arg);
+      if (!indexer) {
+        fputs("Invalid indexing method\n", stderr);
+        goto error;
+      }
+      config->path_indexer = indexer;
+    } else if (!strcmp("--separator-method", flag) || !strcmp("-M", flag)) {
+      if (!consume_argument(&arg, arg_end)) {
+        goto error;
+      }
+      indexer = select_indexer(*arg);
+      if (!indexer) {
+        fputs("Invalid indexing method\n", stderr);
+        goto error;
+      }
+      config->separator_indexer = indexer;
+    } else if (!strcmp("--leading", flag) || !strcmp("-l", flag)) {
+      config->skip_leading = true;
+    } else if (!strcmp("--compact", flag) || !strcmp("-c", flag)) {
+      config->compact = true;
+    } else if (!strcmp("--newline", flag) || !strcmp("-n", flag)) {
+      config->new_line = false;
+    } else if (!strcmp("--bash", flag) || !strcmp("-b", flag)) {
+      config->bash_escape = true;
+    } else if (!strcmp("--help", flag) || !strcmp("-h", flag)) {
+      usage();
+      return false;
+    } else if (!strcmp("--version", flag) || !strcmp("-v", flag)) {
+      version();
+      return false;
+    } else if (!strcmp("--", flag)) {
+      arg++;
+      break;
+    } else if (!strncmp("--", flag, 2) || !strncmp("-", flag, 1)) {
+      fprintf(stderr, "Invalid usage: unknown option %s\n", flag);
+      goto error;
+    } else {
+      break;
+    }
+  }
+
+  if (arg_end > arg + 1) {
+    usage();
+    goto error;
+  }
+
+  if (arg_end == arg) {
+    config->path = NULL;
+  } else {
+    config->path = *arg;
+  }
+
+  return true;
+ error:
+  *error = true;
+  return false;
+}
+
+int main(int argc, char *argv[]) {
+  int ret = EXIT_SUCCESS;
+  char *path = NULL;
+  char *cwd_path = NULL;
+  char *compacted_path = NULL;
+  const struct palette *default_path_palette;
+  const struct palette *default_separator_palette;
+  struct config config = {
+    .path = NULL,
+    .separator = "/",
+    .path_palette = NULL,
+    .separator_palette = NULL,
+    .new_line = true,
+    .bash_escape = false,
+    .compact = false,
+    .skip_leading = false,
+    .path_indexer = index_sequential,
+    .separator_indexer = index_sequential,
+  };
 
   setup_random();
 
@@ -511,140 +662,72 @@ int main(int argc, char *argv[]) {
     goto out;
   }
 
-  select_palette(&default_palette,
-                 &palette_size,
-                 &default_path_sep_palette,
-                 &path_sep_palette_size);
-
-  static const struct option options[] = {
-      { "palette", required_argument, NULL, 'p' },
-      { "separator", required_argument, NULL, 's' },
-      { "separator-string", required_argument, NULL, 'S' },
-      { "method", required_argument, NULL, 'm' },
-      { "separator-method", required_argument, NULL, 'M' },
-      { "leading", no_argument, NULL, 'l' },
-      { "compact", no_argument, NULL, 'c' },
-      { "newline", no_argument, NULL, 'n' },
-      { "bash", no_argument, NULL, 'b' },
-      { "help", no_argument, NULL, 'h' },
-      { "version", no_argument, NULL, 'v' },
-      { 0 }
-  };
-
-  while ((arg = getopt_long(argc, argv, "p:s:S:m:M:lcnbhv", options, NULL)) != -1) {
-    switch (arg) {
-      case 'p':
-        if ((palette_size = parse_palette(optarg, &palette)) == 0) {
-          fputs("Invalid palette\n", stderr);
-          ret = EXIT_FAILURE;
-          goto out;
-        }
-        break;
-      case 's':
-        if ((path_sep_palette_size = parse_palette(optarg, &path_sep_palette)) == 0) {
-          fputs("Invalid separator palette\n", stderr);
-          ret = EXIT_FAILURE;
-          goto out;
-        }
-        break;
-      case 'S':
-        separator = optarg;
-        break;
-      case 'm':
-        path_indexer = select_indexer(optarg);
-        if (!path_indexer) {
-          fputs("Invalid indexing method\n", stderr);
-          ret = EXIT_FAILURE;
-          goto out;
-        }
-        break;
-      case 'M':
-        separator_indexer = select_indexer(optarg);
-        if (!separator_indexer) {
-          fputs("Invalid indexing method\n", stderr);
-          ret = EXIT_FAILURE;
-          goto out;
-        }
-        break;
-      case 'l':
-        skip_leading = true;
-        break;
-      case 'c':
-        compact = true;
-        break;
-      case 'n':
-        new_line = false;
-        break;
-      case 'b':
-        bash_escape = true;
-        break;
-      case 'h':
-        usage();
-        goto out;
-      case 'v':
-        version();
-        goto out;
-      default:
-        usage();
-        ret = EXIT_FAILURE;
-        goto out;
-    }
+  if (get_color_count() >= 256) {
+    default_path_palette = &PATH_PALETTE_256;
+    default_separator_palette = &SEPARATOR_PALETTE_256;
+  } else {
+    default_path_palette = &PATH_PALETTE_8;
+    default_separator_palette = &SEPARATOR_PALETTE_8;
   }
 
-  if (optind == argc) {
-    if ((path = get_working_directory()) == NULL) {
+  bool error;
+  if (!parse_args(argc, argv, &config, &error)) {
+    if (error) {
+      ret = EXIT_FAILURE;
+    }
+    goto out;
+  }
+
+  path = config.path;
+  if (!config.path) {
+    cwd_path = get_working_directory();
+    if (!cwd_path) {
       fputs("Failed to get working directory\n", stderr);
       ret = EXIT_FAILURE;
       goto out;
     }
-  } else if (optind > argc) {
-    usage();
-    ret = EXIT_FAILURE;
-    goto out;
+    path = cwd_path;
   }
 
-  if (compact) {
-    if ((compacted = compact_path(path ? path : argv[optind])) == NULL) {
+  if (config.compact) {
+    compacted_path = compact_path(path);
+    if (!compacted_path) {
       fputs("Failed to get home directory\n", stderr);
       ret = EXIT_FAILURE;
       goto out;
     }
-    selected = compacted;
-  } else {
-    selected = path ? path : argv[optind];
+    path = compacted_path;
   }
 
-  print_path(path_indexer,
-             separator_indexer,
-             selected,
-             separator,
-             path_sep_palette ? path_sep_palette : default_path_sep_palette,
-             path_sep_palette_size,
-             palette ? palette : default_palette,
-             palette_size,
-             skip_leading,
-             bash_escape);
+  print_path(path,
+             config.separator,
+             config.path_palette ? config.path_palette : default_path_palette,
+             config.separator_palette ? config.separator_palette : default_separator_palette,
+             config.skip_leading,
+             config.bash_escape,
+             config.path_indexer,
+             config.separator_indexer);
 
-  if (new_line) {
+  if (config.new_line) {
     fputc('\n', stdout);
   }
 
 out:
 
-  if (palette) {
-    free(palette);
+  if (config.path_palette) {
+    palette_free(config.path_palette);
   }
 
-  if (path_sep_palette) {
-    free(path_sep_palette);
+  if (config.separator_palette) {
+    palette_free(config.separator_palette);
   }
 
-  if (path) {
-    free(path);
+  if (cwd_path) {
+    free(cwd_path);
   }
 
-  if (compacted) {
-    free(compacted);
+  if (compacted_path) {
+    free(compacted_path);
   }
 
   return ret;
