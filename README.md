@@ -86,9 +86,9 @@ displayed and the output included into the prompt string.
 
 ### Styles
 
-Styles specify how path components should look. `--palette` and `--separator`
-options accept styles as arguments. Style consists of a list of properties
-separated by commas. The possible properties are:
+Styles specify how path components should look. `--palette` and
+`--separator-palette` options accept styles as arguments. Style consists of a
+list of properties separated by commas. The possible properties are:
 
 | Property     | Description                     |
 | ------------ | ------------------------------- |
