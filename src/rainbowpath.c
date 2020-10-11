@@ -53,6 +53,11 @@ struct palette {
   size_t size;
 };
 
+struct override_list {
+  struct override *head;
+  struct override *tail;
+};
+
 struct override {
   ssize_t raw_index;
   size_t index;
@@ -72,8 +77,8 @@ struct config {
   char *separator;
   struct palette *path_palette;
   struct palette *separator_palette;
-  struct override *path_overrides;
-  struct override *separator_overrides;
+  struct override_list path_overrides;
+  struct override_list separator_overrides;
   bool new_line;
   bool bash_escape;
   bool compact;
@@ -269,35 +274,28 @@ static void palette_free(struct palette *palette) {
   free(palette);
 }
 
-static void override_free(struct override *override) {
-  struct override *current, *next;
-  for (current = override; current; current = next) {
+static void override_free(struct override_list *overrides) {
+  struct override *next;
+  for (struct override *current = overrides->head; current; current = next) {
     next = current->next;
     free(current);
   }
+  overrides->head = NULL;
+  overrides->tail = NULL;
 }
 
-static void override_push(struct override **head, struct override *override) {
-  if (*head) {
-    override->next = *head;
+static void override_push(struct override_list *overrides, struct override *new) {
+  if (overrides->tail) {
+    overrides->tail->next = new;
+    overrides->tail = new;
+  } else {
+    overrides->head = new;
+    overrides->tail = new;
   }
-  *head = override;
 }
 
-static const struct style *override_for_index(const struct override *override,
-                                              size_t index) {
-  for (const struct override *current = override;
-       current;
-       current = current->next) {
-    if (current->index == index) {
-      return &current->style;
-    }
-  }
-  return NULL;
-}
-
-static bool override_normalize(struct override *override, size_t length) {
-  struct override *current = override;
+static bool override_normalize(struct override_list *overrides, size_t length) {
+  struct override *current = overrides->head;
   for (; current; current = current->next) {
     if (current->raw_index < 0) {
       if (current->raw_index < -(ssize_t)length) {
@@ -419,28 +417,30 @@ static void path_components(const char *path,
 }
 
 static const struct style *choose_style(const struct palette *palette,
-                                        const struct override *overrides,
+                                        const struct override_list *overrides,
                                         indexer_t indexer,
                                         size_t index,
                                         const char *start,
                                         const char *end,
                                         struct style *tmp) {
+  bool merged = false;
   size_t selected = indexer(palette->size, index, start, end);
   const struct style *style = &palette->styles[selected];
-  const struct style *override = override_for_index(overrides, index);
-  if (override) {
-    merge_styles(style, override, tmp);
-    return tmp;
+  for (const struct override *override = overrides->head; override; override = override->next) {
+    if (override->index == index) {
+      merge_styles(merged ? tmp : style, &override->style, tmp);
+      merged = true;
+    }
   }
-  return style;
+  return merged ? tmp : style;
 }
 
 static void print_path(const char *path,
                        const char *separator,
                        const struct palette *path_palette,
                        const struct palette *separator_palette,
-                       const struct override *path_overrides,
-                       const struct override *separator_overrides,
+                       const struct override_list *path_overrides,
+                       const struct override_list *separator_overrides,
                        indexer_t path_indexer,
                        indexer_t separator_indexer,
                        bool bash_escape) {
@@ -819,7 +819,7 @@ static bool parse_indexer_arg(char ***arg,
 
 static bool parse_override_arg(char ***arg,
                                char **arg_end,
-                               struct override **result,
+                               struct override_list *result,
                                const char *flag) {
   struct override *override = check(malloc(sizeof(*override)));
   override->next = NULL;
@@ -840,7 +840,7 @@ static bool parse_override_arg(char ***arg,
   override_push(result, override);
   return true;
  error:
-  override_free(override);
+  free(override);
   return false;
 }
 
@@ -937,8 +937,8 @@ int main(int argc, char *argv[]) {
     .separator = "/",
     .path_palette = NULL,
     .separator_palette = NULL,
-    .path_overrides = NULL,
-    .separator_overrides = NULL,
+    .path_overrides = {0},
+    .separator_overrides = {0},
     .new_line = true,
     .bash_escape = false,
     .compact = false,
@@ -998,12 +998,12 @@ int main(int argc, char *argv[]) {
   size_t segment_count, separator_count;
   path_components(path, &segment_count, &separator_count);
 
-  if (!override_normalize(config.path_overrides, segment_count)) {
+  if (!override_normalize(&config.path_overrides, segment_count)) {
     ret = EXIT_FAILURE;
     goto out;
   }
 
-  if (!override_normalize(config.separator_overrides, separator_count)) {
+  if (!override_normalize(&config.separator_overrides, separator_count)) {
     ret = EXIT_FAILURE;
     goto out;
   }
@@ -1012,8 +1012,8 @@ int main(int argc, char *argv[]) {
              config.separator,
              config.path_palette ? config.path_palette : default_path_palette,
              config.separator_palette ? config.separator_palette : default_separator_palette,
-             config.path_overrides,
-             config.separator_overrides,
+             &config.path_overrides,
+             &config.separator_overrides,
              config.path_indexer,
              config.separator_indexer,
              config.bash_escape);
@@ -1031,13 +1031,9 @@ out:
     palette_free(config.separator_palette);
   }
 
-  if (config.path_overrides) {
-    override_free(config.path_overrides);
-  }
+  override_free(&config.path_overrides);
 
-  if (config.separator_overrides) {
-    override_free(config.separator_overrides);
-  }
+  override_free(&config.separator_overrides);
 
   if (cwd_path) {
     free(cwd_path);
