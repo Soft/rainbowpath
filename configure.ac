@@ -1,4 +1,4 @@
-AC_INIT([rainbowpath], [0.4.0], [samuel.lauren@iki.fi])
+AC_INIT([rainbowpath], [0.5.2], [samuel.lauren@iki.fi])
 AM_INIT_AUTOMAKE([-Wall foreign])
 AC_CONFIG_SRCDIR([src/rainbowpath.c])
 AC_LANG([C])
