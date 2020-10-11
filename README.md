@@ -113,10 +113,10 @@ rainbowpath --palette 'fg=green,underlined;fg=yellow,bg=magenta,bold'
 ### Style Overrides
 
 `--override` and `--separator-override` options make it possible to selectively
-override the style of particular path component at a specific index.
+override the style of a path component at the given index.
 
-For example, the following command displays all the directory components of the
-path as blue, except the first one (index `0` "this") which will be displayed as
+For example, the following command prints all the directory components of the
+path in blue, except the first one (index `0` "this") which will be printed in
 yellow.
 
 ``` shell
@@ -125,14 +125,14 @@ rainbowpath -p 'fg=blue' -o 0 'fg=yellow' '/this/is/an/example/'
 
 Component indexes can also be negative, in which case they start at the end of
 the list of path components. For example, the following command will print
-"example" as yellow.
+"example" in yellow.
 
 ``` shell
 rainbowpath -p 'fg=blue' -o -1 'fg=yellow' '/this/is/an/example/'
 ```
 
 Override styles are merged with the base style from the palette. For example,
-the following command will display example in blue bold font.
+the following command will display example in bold blue font.
 
 ``` shell
 rainbowpath -p 'fg=blue' -o -1 'bold' '/this/is/an/example/'
