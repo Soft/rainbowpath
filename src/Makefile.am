@@ -1,5 +1,5 @@
 bin_PROGRAMS = rainbowpath
-rainbowpath_SOURCES = rainbowpath.c
+rainbowpath_SOURCES = rainbowpath.c styles.c parser.c list.c utils.c
 
 if USE_CURSES
 rainbowpath_SOURCES += curses.c
@@ -8,3 +8,4 @@ rainbowpath_LDADD = $(CURSES_LIBS)
 else
 rainbowpath_SOURCES += builtin.c
 endif
+

@@ -1,4 +1,4 @@
-#include "rainbowpath.h"
+#include "output.h"
 
 #include <stdlib.h>
 #include <unistd.h>

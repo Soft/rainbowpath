@@ -1,5 +1,9 @@
-AC_INIT([rainbowpath], [0.5.2], [samuel.lauren@iki.fi])
-AM_INIT_AUTOMAKE([-Wall foreign])
+AC_INIT([rainbowpath],
+  [0.6.0],
+  [samuel.lauren@iki.fi],
+  [rainbowpath],
+  [https://github.com/Soft/rainbowpath])
+AM_INIT_AUTOMAKE([-Wall foreign subdir-objects])
 AC_CONFIG_SRCDIR([src/rainbowpath.c])
 AC_LANG([C])
 
@@ -42,5 +46,5 @@ AS_IF([test "$HAVE_CURSES" -eq 1],
       [Use curses])])
 
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile])
 AC_OUTPUT
