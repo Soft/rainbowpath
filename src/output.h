@@ -1,5 +1,5 @@
-#ifndef RAINBOWPATH_H
-#define RAINBOWPATH_H
+#ifndef OUTPUT_H
+#define OUTPUT_H
 
 #include <stdbool.h>
 #include <stdint.h>

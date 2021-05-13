@@ -15,6 +15,15 @@ configure
 depcomp
 install-sh
 missing
+test-driver
 rainbowpath
 src/.deps/*
 stamp-*
+.dirstamp
+*~
+*.log
+.clangd/
+*.supp
+*.trs
+*.Po
+test_parser
