@@ -6,8 +6,7 @@ jobs:
       script:
         - ./autogen.sh
         - ./configure --without-curses
-        - make
-        - ./src/rainbowpath
+        - make check
     - stage: binary
       services:
         - docker

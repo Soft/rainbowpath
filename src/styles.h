@@ -38,9 +38,9 @@ struct style *palette_add(struct palette *palette);
 size_t palette_size(const struct palette *palette);
 void palette_free(struct palette *palette);
 
-const struct palette *SEPARATOR_PALETTE_8;
-const struct palette *SEPARATOR_PALETTE_256;
-const struct palette *PATH_PALETTE_8;
-const struct palette *PATH_PALETTE_256;
+extern const struct palette *SEPARATOR_PALETTE_8;
+extern const struct palette *SEPARATOR_PALETTE_256;
+extern const struct palette *PATH_PALETTE_8;
+extern const struct palette *PATH_PALETTE_256;
 
 #endif

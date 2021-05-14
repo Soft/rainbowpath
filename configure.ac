@@ -7,11 +7,6 @@ AM_INIT_AUTOMAKE([-Wall foreign subdir-objects])
 AC_CONFIG_SRCDIR([src/rainbowpath.c])
 AC_LANG([C])
 
-AC_PROG_CC
-AC_PROG_CC_C99
-AC_HEADER_STDBOOL
-AC_TYPE_UINT8_T
-
 AC_CHECK_FUNC([drand48],
   [AC_DEFINE([HAVE_DRAND48], [1], [Use drand48])])
 
