@@ -9,6 +9,10 @@ enum {
   INITIAL_PALETTE_SIZE = 32
 };
 
+bool bool_attr_enabled(const struct bool_attr *attr) {
+  return attr->state == ATTR_STATE_SET && attr->value;
+}
+
 struct palette {
   struct style *styles;
   size_t size;

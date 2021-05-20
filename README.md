@@ -57,7 +57,7 @@ Options:
                                         can appear multiple times.
   -O, --separator-override INDEX STYLE  Override separator style at the given index.
                                         This option can appear multiple times.
-  -l, --leading                         Do not display leading path separator
+  -l, --strip-leading                   Do not display leading path separator
   -c, --compact                         Replace home directory path prefix with ~
   -n, --newline                         Do not append newline
   -b, --bash                            Escape control codes for use in Bash prompts
@@ -123,7 +123,7 @@ yellow.
 rainbowpath -p 'fg=blue' -o 0 'fg=yellow' '/this/is/an/example/'
 ```
 
-Component indexes can also be negative, in which case they start at the end of
+Component indices can also be negative, in which case they start at the end of
 the list of path components. For example, the following command will print
 "example" in yellow.
 
@@ -147,3 +147,38 @@ font, except the last one which will be printed in the regular font:
 ``` shell
 rainbowpath -p 'fg=yellow,bold' -o -1 '!fg,!bold' '/this/is/an/example/'
 ```
+
+### Configuration Files
+
+Configuration files can also be used to specify how paths should be displayed.
+The program looks for configuration from the following locations in order:
+
+1. `~/.rainbowpath.conf`
+2. `$XDG_CONFIG_HOME/.config/rainbowpath/rainbowpath.conf`
+3. From `rainbowpath/rainbowpath.conf` under each directory mentioned in
+   `$XDG_CONFIG_DIRS` environment variable.
+4. `/etc/xdg/rainbowpath/rainbowpath.conf`
+
+The configuration consists of key-value pairs where the keys correspond to the
+program's long-form command-line options. Values can be either strings or
+booleans. String values should be enclosed in double quotes (`"`). Within a
+string value, a backslash (`\`) can be used as an escape character. The
+following character escape sequences are supported: `\\`, `\"`, `\n`, `\t`,
+`\r`, `\f`, and `\v`. Boolean values are expressed with `true` and `false`. Hash
+(`#`) character in the beginning of a line starts a line comment. Key-value
+pairs cannot span multiple lines.
+
+The following is an example of a configuration file:
+
+```
+method = "sequential"
+palette = "fg=1; fg=3; fg=2; fg=6; fg=4; fg=5"
+separator-palette = "fg=7, dim"
+compact = true
+
+# Override the style for the last component of the path.
+override[-1] = "bold"
+```
+
+Style override indices can be specified inside brackets (`[`, `]`) directly
+following the name of the option.

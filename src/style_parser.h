@@ -1,5 +1,5 @@
-#ifndef PARSER_H
-#define PARSER_H
+#ifndef STYLE_PARSER_H
+#define STYLE_PARSER_H
 
 #include "styles.h"
 #include "list.h"
