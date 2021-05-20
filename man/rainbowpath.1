@@ -1,92 +1,68 @@
 '\" t
-.TH RAINBOWPATH 1 2018-2020
-
+.TH RAINBOWPATH 1 2018-2021
 .SH NAME
-
 rainbowpath \- Color path components using a palette.
-
 .SH SYNOPSIS
-
 .B rainbowpath
 [\fB\-p\fR \fIPALETTE\fR] [\fB\-s\fR \fIPALETTE\fR] [\fB\-S\fR \fISEPARATOR\fR] [\fB\-m\fR \fIMETHOD\fR] [\fB\-M\fR \fIMETHOD\fR] [\fB\-o\fR \fIINDEX\fR \fISTYLE\fR] [\fB\-O\fR \fIINDEX\fR \fISTYLE\fR] [\fB\-l\fR] [\fB\-c\fR] [\fB\-n\fR] [\fB\-b\fR] [\fB\-h\fR] [\fB\-v\fR] [\fIPATH\fR]
-
+.sp
 \fBrainbowpath\fR formats supplied path by coloring each path component with a
 color selected from a palette. By default, colors for path components are
 selected based on the order they appear in the palette. If no palette is
 supplied a default one will be used. When invoked without a path
 \fBrainbowpath\fR colors the path of the current working directory.
-
 .SH OPTIONS
-
 .TP
 .BI \-p " PALETTE\fR,\fP " \-\-palette " PALETTE"
 Semicolon separated list of styles for path components.
-
 .TP
 .BI \-s " PALETTE\fR,\fP " \-\-separator\-palette " PALETTE"
 Semicolon separated list of styles for path separators.
-
 .TP
 .BI \-S " SEPARATOR\fR,\fP " \-\-separator " SEPARATOR"
 String used to separate path components in the output (defaults to '\fI/\fR').
-
 .TP
 .BI \-m " METHOD\fR,\fP " \-\-method " METHOD"
-
 Method for selecting styles from palette. One of \fIsequential\fR, \fIhash\fR,
 \fIrandom\fR (defaults to \fIsequential\fR). \fIsequential\fR mode selects
 styles based on the order they appear in the palette. \fIhash\fR mode selects
 styles based on the contents of path segment being processed. \fIrandom\fR mode
 selects styles randomly from the palette.
-
 .TP
 .BI \-M " METHOD\fR,\fP " \-\-separator\-method " METHOD"
-
 Method for selecting styles from separator palette. See \fB\-\-method\fR for
 further details.
-
 .TP
 .BI \-o " INDEX STYLE\fR,\fP " \-\-override " INDEX STYLE"
-
 Override style at the given index. This option can appear multiple times. See
 \fBSTYLE OVERRIDES\fR for further details.
-
 .TP
 .BI \-O " INDEX STYLE\fR,\fP " \-\-separator\-override " INDEX STYLE"
-
 Override separator style at given the index. This option can appear multiple
 times. See \fBSTYLE OVERRIDES\fR for further details.
-
 .TP
-.BR \-l ", " \-\-leading
+.BR \-l ", " \-\-strip\-leading
 Do not display leading path separator.
-
 .TP
 .BR \-c ", " \-\-compact
 Replace home directory path prefix with \fI~\fR.
-
 .TP
 .BR \-n ", " \-\-newline
 Do not append newline.
-
 .TP
 .BR \-b ", " \-\-bash
 Escape control codes for use in Bash prompts.
-
 .TP
 .BR \-h ", " \-\-help
 Display help.
-
 .TP
 .BR \-v ", " \-\-version
 Display version information.
-
 .SH STYLES
-
 Styles specify how path components should look. \fB\-\-palette\fR and
 \fB\-\-separator\-palette\fR options accept styles as arguments. Style consists
 of a list of properties separated by commas. The possible properties are:
-
+.sp
 .RS
 .TS
 lB lB
@@ -100,57 +76,103 @@ underlined	Underlined text
 blink	Blinking text
 .TE
 .RE
-
+.sp
 Where \fICOLOR\fR is an integer between \fI0\fR and \fI255\fR or one of:
 \fIblack\fR, \fIred\fR, \fIgreen\fR, \fIyellow\fR, \fIblue\fR, \fImagenta\fR,
 \fIcyan\fR, \fIwhite\fR.
-
+.sp
 For example, the following invocation will display the path of the current
 working directory altering styles of path components between underlined green
 text and bold yellow text on magenta background:
-
+.sp
+.RS 3
 .nf
-rainbowpath --palette 'fg=green,underlined;fg=yellow,bg=magenta,bold'
+\fBrainbowpath \-\-palette\fP \fI'fg=green,underlined;fg=yellow,bg=magenta,bold'\fP
 .fi
-
+.RE
 .SH STYLE OVERRIDES
-
 \fB\-\-override\fR and \fB\-\-separator-override\fR options make it possible to
 selectively override the style of a path component at the given index.
-
+.sp
 For example, the following command prints all the directory components of the
 path in blue, except the first one (index \fI0\fR `this') which will be printed
 in yellow.
-
+.sp
+.RS 3
 .nf
-rainbowpath -p 'fg=blue' -o 0 'fg=yellow' '/this/is/an/example/'
+\fBrainbowpath \-p\fP \fI'fg=blue'\fP \fB\-o\fP \fI0\fP \fI'fg=yellow'\fP \fI'/this/is/an/example/'\fP
 .fi
-
-Component indexes can also be negative, in which case they start at the end of
+.RE
+.sp
+Component indices can also be negative, in which case they start at the end of
 the list of path components. For example, the following command will print
 `example' in yellow.
-
+.sp
+.RS 3
 .nf
-rainbowpath -p 'fg=blue' -o -1 'fg=yellow' '/this/is/an/example/'
+\fBrainbowpath \-p\fP \fI'fg=blue'\fP \fB\-o\fP \fI\-1\fP \fI'fg=yellow'\fP \fI'/this/is/an/example/'\fP
 .fi
-
+.RE
+.sp
 Override styles are merged with the base style from the palette. For example,
 the following command will display example in bold blue font.
-
+.sp
+.RS 3
 .nf
-rainbowpath -p 'fg=blue' -o -1 'bold' '/this/is/an/example/'
+\fBrainbowpath \-p\fP \fI'fg=blue'\fP \fB\-o\fP \fI\-1\fP \fI'bold'\fP \fI'/this/is/an/example/'\fP
 .fi
-
-
+.RE
+.sp
 Override styles are also able to revert style properties set by the base style.
 This can be achieved by prefixing the property name with a \fI!\fR.
-
+.sp
 For example, the following command will print all path components in bold yellow
 font, except the last one which will be printed in the regular font:
-
+.sp
+.RS 3
 .nf
-rainbowpath -p 'fg=yellow,bold' -o -1 '!fg,!bold' '/this/is/an/example/'
+\fBrainbowpath \-p\fP \fI'fg=yellow,bold'\fP \fB\-o\fP \fI\-1\fP \fI'!fg,!bold'\fP \fI'/this/is/an/example/'\fP
 .fi
+.RE
+.SH CONFIGURATION FILES
+Configuration files can also be used to specify how paths should be displayed.
+The program looks for configuration from the following locations in order:
+.IP 1. 3
+\fB~/.rainbowpath.conf\fP
+.IP 2. 3
+\fB$XDG_CONFIG_HOME/.config/rainbowpath/rainbowpath.conf\fP
+.IP 3. 3
+From \fBrainbowpath/rainbowpath.conf\fP under each directory mentioned in
+\fB$XDG_CONFIG_DIRS\fP environment variable.
+.IP 4. 3
+\fB/etc/xdg/rainbowpath/rainbowpath.conf\fP
+.RE
+.sp
+The configuration consists of key-value pairs where the keys correspond to the
+program's long-form command-line options. Values can be either strings or
+booleans. String values should be enclosed in double quotes (\fB"\fP). Within a
+string value, a backslash (\fB\\\fP) can be used as an escape character. The
+following character escape sequences are supported: \fB\\\\\fP, \fB\\"\fP,
+\fB\\n\fP, \fB\\t\fP, \fB\\r\fP, \fB\\f\fP, and \fB\\v\fP. Boolean values are
+expressed with \fBtrue\fP and \fBfalse\fP. Hash (\fB#\fP) character in the
+beginning of a line starts a line comment. Key-value pairs cannot span multiple
+lines.
+.sp
+The following is an example of a configuration file:
+.sp
+.RS 3
+.nf
+\fBmethod\fP = \fI"sequential"\fP
+\fBpalette\fP = \fI"fg=1; fg=3; fg=2; fg=6; fg=4; fg=5"\fP
+\fBseparator\-palette\fP = \fI"fg=7, dim"\fP
+\fBcompact\fP = \fItrue\fP
 
+# Override the style for the last component of the path.
+\fBoverride\fP[\fI-1\fP] = \fI"bold"\fP
+.fi
+.RE
+.sp
+Style override indices can be specified inside brackets (\fB[\fP, \fB]\fP)
+directly following the name of the option.
 .SH AUTHORS
 Samuel Laurén <samuel.lauren@iki.fi>

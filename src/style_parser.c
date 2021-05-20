@@ -3,73 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "parser.h"
-#include "styles.h"
+#include "style_parser.h"
+#include "parser_common.h"
+#include "bytes.h"
+#include "list.h"
 #include "utils.h"
 
-static void parse_error(const char *message) {
-  fprintf(stderr, "%s\n", message);
-}
-
-static char *make_string(const char *begin, const char *end) {
-  assert(end >= begin);
-  size_t size = end - begin;
-  char *result = check(calloc(size + 1, sizeof(char)));
-  return memcpy(result, begin, size);
-}
-
-static bool at_end(const char *pos, const char *end) {
-  return pos >= end;
-}
-
-static const char *skip_whitespace(const char *pos, const char *end) {
-  while (!at_end(pos, end)) {
-    switch (*pos) {
-    case ' ':
-    case '\t':
-    case '\n':
-    case '\v':
-    case '\f':
-    case '\r':
-      pos++;
-      break;
-    default:
-      goto out;
-    }
-  }
- out:
-  return pos;
-}
-
-static bool is_token_char(char c) {
-  return ('0' <= c && c <= '9')
-    || ('A' <= c && c <= 'Z')
-    || ('a' <= c && c <= 'z');
-}
-
-static const char *parse_char(const char *pos, const char *end, char c) {
-  pos = skip_whitespace(pos, end);
-  if (at_end(pos, end) || *pos != c) {
-    return NULL;
-  }
-  return ++pos;
-}
-
-static const char *parse_token(const char *pos, const char *end, char **token) {
-  pos = skip_whitespace(pos, end);
-  if (at_end(pos, end)) {
-    return NULL;
-  }
-  const char *start = pos;
-  while (!at_end(pos, end) && is_token_char(*pos)) {
-    pos++;
-  }
-  if (start == pos) {
-    return NULL;
-  }
-  *token = make_string(start, pos);
-  return pos;
-}
 
 static bool parse_symbolic_color(const char *value, uint8_t *color) {
   static const char *colors[] = {
@@ -196,7 +135,6 @@ static const char *parse_property(const char *pos, const char *end, struct style
 static const char *parse_style_inner(const char *pos, const char *end, struct style *style) {
   memset(style, 0, sizeof(*style));
   pos = skip_whitespace(pos, end);
-  /* struct style *style_ = check(calloc(1, sizeof(*style_))); */
   pos = parse_property(pos, end, style);
   if (!pos) {
     parse_error("Expected property");
@@ -226,7 +164,7 @@ const char *parse_style(const char *pos, const char *end, struct style **style) 
   }
   pos = skip_whitespace(pos, end);
   if (!at_end(pos, end)) {
-    parse_error("Expected end of input");
+    parse_error("Expected end of style");
     free(style_);
     return NULL;
   }
@@ -262,7 +200,7 @@ const char *parse_palette(const char *pos, const char *end, struct palette **pal
   }
   pos = skip_whitespace(pos, end);
   if (!at_end(pos, end)) {
-    parse_error("Expected end of input");
+    parse_error("Expected end of palette");
     palette_free(palette_);
     return NULL;
   }
@@ -273,4 +211,3 @@ const char *parse_palette(const char *pos, const char *end, struct palette **pal
 const char *parse_palette_cstr(const char *str, struct palette **palette) {
   return parse_palette(str, str + strlen(str), palette);
 }
-

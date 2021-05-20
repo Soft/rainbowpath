@@ -1,116 +1,129 @@
-#include "output.h"
+#include "terminal.h"
 
 #include <stdlib.h>
 #include <unistd.h>
-
 #include <curses.h>
 #include <term.h>
 
+#include "utils.h"
+
 struct terminal {
   int color_count;
-  char *fg;
-  char *bg;
-  char *bold;
-  char *dim;
-  char *underlined;
-  char *blink;
-  char *reset;
-} terminal;
+  const char *fg;
+  const char *bg;
+  const char *bold;
+  const char *dim;
+  const char *underlined;
+  const char *blink;
+  const char *reset;
+};
 
-bool setup_terminal(void) {
-  int err, int_value;
+struct terminal *terminal_create(void) {
+  int err;
+  int int_value;
   char *str_value;
 
   if (setupterm(NULL, STDOUT_FILENO, &err) == ERR) {
     switch (err) {
       case 1:
         fputs("Invalid terminal type\n", stderr);
-        return false;
+        return NULL;
       case 0:
         fputs("Failed to determine terminal type\n", stderr);
-        return false;
+        return NULL;
       case -1:
         fputs("Failed to access terminfo database\n", stderr);
-        return false;
+        return NULL;
       default:
         fputs("Unknown error\n", stderr);
-        return false;
+        return NULL;
     }
   }
 
+  struct terminal *terminal = check(malloc(sizeof(*terminal)));
+
   if ((int_value = tigetnum("colors")) < 0) {
-    return false;
+    goto error;
   }
-  terminal.color_count = int_value;
+  terminal->color_count = int_value;
 
   if ((str_value = tigetstr("setaf")) < (char *)0) {
-    return false;
+    goto error;
   }
-  terminal.fg = str_value;
+  terminal->fg = str_value;
 
   if ((str_value = tigetstr("setab")) < (char *)0) {
-    return false;
+    goto error;
   }
-  terminal.bg = str_value;
+  terminal->bg = str_value;
 
   if ((str_value = tigetstr("bold")) < (char *)0) {
-    return false;
+    goto error;
   }
-  terminal.bold = str_value;
+  terminal->bold = str_value;
 
   if ((str_value = tigetstr("dim")) < (char *)0) {
-    return false;
+    goto error;
   }
-  terminal.dim = str_value;
+  terminal->dim = str_value;
 
   if ((str_value = tigetstr("smul")) < (char *)0) {
-    return false;
+    goto error;
   }
-  terminal.underlined = str_value;
+  terminal->underlined = str_value;
 
   if ((str_value = tigetstr("blink")) < (char *)0) {
-    return false;
+    goto error;
   }
-  terminal.blink = str_value;
+  terminal->blink = str_value;
 
   if ((str_value = tigetstr("sgr0")) < (char *)0) {
-    return false;
+    goto error;
   }
-  terminal.reset = str_value;
+  terminal->reset = str_value;
 
-  return true;
+  return terminal;
+
+ error:
+  free(terminal);
+  return NULL;
 }
 
-int get_color_count(void) {
-  return terminal.color_count;
+int terminal_color_count(struct terminal *terminal) {
+  return terminal->color_count;
 }
 
-void begin_fg(uint8_t color) {
-  char *result = tiparm(terminal.fg, color);
+void terminal_fg(struct terminal *terminal, uint8_t color) {
+  char *result = tiparm(terminal->fg, color);
   putp(result);
 }
 
-void begin_bg(uint8_t color) {
-  char *result = tiparm(terminal.bg, color);
+void terminal_bg(struct terminal *terminal, uint8_t color) {
+  char *result = tiparm(terminal->bg, color);
   putp(result);
 }
 
-void begin_bold(void) {
-  putp(terminal.bold);
+void terminal_bold(struct terminal *terminal) {
+  putp(terminal->bold);
 }
 
-void begin_dim(void) {
-  putp(terminal.dim);
+void terminal_dim(struct terminal *terminal) {
+  putp(terminal->dim);
 }
 
-void begin_underlined(void) {
-  putp(terminal.underlined);
+void terminal_underlined(struct terminal *terminal) {
+  putp(terminal->underlined);
 }
 
-void begin_blink(void) {
-  putp(terminal.blink);
+void terminal_blink(struct terminal *terminal) {
+  putp(terminal->blink);
 }
 
-void reset_style(void) {
-  putp(terminal.reset);
+void terminal_reset_style(struct terminal *terminal) {
+  putp(terminal->reset);
 }
+
+void terminal_free(struct terminal *terminal) {
+  free(terminal);
+}
+

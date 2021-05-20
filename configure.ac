@@ -6,6 +6,7 @@ AC_INIT([rainbowpath],
 AM_INIT_AUTOMAKE([-Wall foreign subdir-objects])
 AC_CONFIG_SRCDIR([src/rainbowpath.c])
 AC_LANG([C])
+AC_GNU_SOURCE
 
 AC_CHECK_FUNC([drand48],
   [AC_DEFINE([HAVE_DRAND48], [1], [Use drand48])])
@@ -40,6 +41,6 @@ AS_IF([test "$HAVE_CURSES" -eq 1],
       [1],
       [Use curses])])
 
-AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_HEADERS([build.h])
 AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile])
 AC_OUTPUT

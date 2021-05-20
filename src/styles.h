@@ -21,6 +21,8 @@ struct bool_attr {
   bool value; // Set if state == ATTR_STATE_SET
 };
 
+bool bool_attr_enabled(const struct bool_attr *attr);
+
 struct style {
   struct color_attr fg;
   struct color_attr bg;

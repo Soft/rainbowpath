@@ -61,4 +61,13 @@ should_pass palette "fg=green,underlined ;  fg=yellow,bg=magenta,bold"
 # Unexpected trailer
 should_fail palette "fg=green,underlined;fg=yellow,bg=magenta,bold;"
 
+# Example configuration file
+should_pass config '
+method = "sequential"
+palette = "fg=1; fg=3; fg=2; fg=6; fg=4; fg=5"
+separator-palette = "fg=7, dim"
+compact = true
 
+# Override the style for the last path component.
+override[-1] = "bold"
+'
